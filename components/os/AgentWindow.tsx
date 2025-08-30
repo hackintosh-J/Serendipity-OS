@@ -36,7 +36,7 @@ const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, cl
         className="h-14 flex-shrink-0 bg-white/80 backdrop-blur-lg flex items-center justify-between px-4 border-b border-gray-200/80"
       >
         <div className="flex items-center space-x-3">
-            <agent.icon className="w-6 h-6 text-gray-700" />
+            {asset.agentId !== 'agent.system.clock' && <agent.icon className="w-6 h-6 text-gray-700" />}
             <span className="font-semibold text-lg text-gray-800">{asset.name}</span>
         </div>
         <button 

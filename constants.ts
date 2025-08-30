@@ -1,6 +1,6 @@
 import { OSState, ModalType, AgentDefinition, AIPanelState } from './types';
-import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent } from './components/agents/index';
-import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon } from './assets/icons';
+import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent } from './components/agents/index';
+import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon } from './assets/icons';
 import React from 'react';
 
 const memoAgent: AgentDefinition = {
@@ -63,6 +63,25 @@ const calculatorAgent: AgentDefinition = {
     size: 'small',
 };
 
+const calendarAgent: AgentDefinition = {
+    id: 'agent.system.calendar',
+    name: '日历',
+    description: '管理您的日程和待办事项。',
+    icon: CalendarIcon,
+    component: CalendarAgent,
+    defaultState: { events: {}, viewDate: new Date().toISOString() },
+    size: 'full',
+};
+
+const todoAgent: AgentDefinition = {
+    id: 'agent.system.todo',
+    name: '待办清单',
+    description: '跟踪您的任务。',
+    icon: CheckSquareIcon,
+    component: TodoAgent,
+    defaultState: { todos: [] },
+    size: 'full',
+};
 
 export const PRE_INSTALLED_AGENTS: { [key: string]: AgentDefinition } = {
     [memoAgent.id]: memoAgent,
@@ -70,6 +89,8 @@ export const PRE_INSTALLED_AGENTS: { [key: string]: AgentDefinition } = {
     [weatherAgent.id]: weatherAgent,
     [clockAgent.id]: clockAgent,
     [calculatorAgent.id]: calculatorAgent,
+    [calendarAgent.id]: calendarAgent,
+    [todoAgent.id]: todoAgent,
     [helpAgent.id]: helpAgent
 };
 
@@ -86,12 +107,12 @@ const initialWelcomeAssetState = {
 
 ## 如何开始？
 
-- **向下滑动** 打开控制中心。
+- **在桌面顶部下拉** 打开控制中心。
 - **向左滑动** 进入速览模式，查看所有资产。
 - **点击Dock栏的AI图标** 与您的AI助手交谈。
 - **在AI助手中点击“创建”** 查看所有可用的Agent并创建新的资产。
 - **点击卡片** 打开它并进行交互。
-- **请求AI** 例如 "北京的天气怎么样？" 来与资产交互。
+- **请求AI** 例如 "北京的天气怎么样？" 或 "提醒我明天下午三点开会" 来与资产交互。
 
 祝您探索愉快！`
 };
@@ -114,15 +135,6 @@ export const INITIAL_OS_STATE: OSState = {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     },
-    'help-asset': {
-        id: 'help-asset',
-        agentId: 'agent.system.help',
-        name: '操作指南',
-        state: {},
-        position: { x: 250, y: 150 },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
     'clock-asset': {
         id: 'clock-asset',
         agentId: 'agent.system.clock',
@@ -138,6 +150,32 @@ export const INITIAL_OS_STATE: OSState = {
         name: '北京天气',
         state: { location: '北京', data: null, lastUpdated: null },
         position: { x: 50, y: 250 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    'my-calendar': {
+        id: 'my-calendar',
+        agentId: 'agent.system.calendar',
+        name: '我的日历',
+        state: { events: {
+            [new Date().toISOString().split('T')[0]]: [
+                { time: '09:00', text: '开始新的一天！' }
+            ]
+        }, viewDate: new Date().toISOString() },
+        position: { x: 1, y: 1 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    'shopping-list': {
+        id: 'shopping-list',
+        agentId: 'agent.system.todo',
+        name: '购物清单',
+        state: { todos: [ 
+            {id: '1', text: '牛奶', completed: false}, 
+            {id: '2', text: '面包', completed: true},
+            {id: '3', text: '鸡蛋', completed: false} 
+        ] },
+        position: { x: 1, y: 1 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     }

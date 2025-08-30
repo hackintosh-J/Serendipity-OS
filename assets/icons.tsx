@@ -41,6 +41,9 @@ export const ClockIcon = createIcon(<><circle cx="12" cy="12" r="10"></circle><p
 export const MoonIcon = createIcon(<><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></>);
 export const SunIcon = createIcon(<><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></>);
 export const BluetoothIcon = createIcon(<><path d="m7 7 10 10-5 5V2l5 5L7 17"></path></>);
-
+export const CalendarIcon = createIcon(<><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></>);
+export const CheckSquareIcon = createIcon(<><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></>);
+export const ChevronLeftIcon = createIcon(<polyline points="15 18 9 12 15 6"></polyline>);
+export const ChevronRightIcon = createIcon(<polyline points="9 18 15 12 9 6"></polyline>);
 
 export default createIcon;

@@ -22,6 +22,8 @@ const agentColorMapping: { [key: string]: { bg: string; text: string; } } = {
     'agent.system.help': { bg: 'bg-emerald-100', text: 'text-emerald-800' },
     'agent.system.calculator': { bg: 'bg-orange-100', text: 'text-orange-800' },
     'agent.system.clock': { bg: 'bg-indigo-100', text: 'text-indigo-800' },
+    'agent.system.calendar': { bg: 'bg-red-100', text: 'text-red-800' },
+    'agent.system.todo': { bg: 'bg-green-100', text: 'text-green-800' },
     'default': { bg: 'bg-gray-100', text: 'text-gray-800' },
 };
 
@@ -32,9 +34,8 @@ const LiveClockPreview: React.FC = () => {
         return () => clearInterval(timerId);
     }, []);
     return (
-         <div className="flex items-center space-x-4 text-gray-700">
-            <ClockIcon className="w-10 h-10 text-indigo-500" />
-            <p className="text-2xl font-mono tabular-nums">
+        <div className="flex items-center justify-center text-gray-700">
+            <p className="text-4xl font-mono tabular-nums">
                 {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </p>
         </div>
@@ -107,6 +108,13 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
                     <p className="text-lg">一个标准的计算器。</p>
                 </div>
             );
+        case 'agent.system.calendar':
+            return <p className="text-sm text-gray-600 italic">管理您的日程和事件。</p>;
+        case 'agent.system.todo': {
+            const todos = asset.state.todos || [];
+            const remaining = todos.filter((t: any) => !t.completed).length;
+            return <p className="text-sm text-gray-600">{remaining > 0 ? `还有 ${remaining} 项待办` : '所有任务已完成！'}</p>;
+        }
         default:
             return <p className="text-sm text-gray-500">无法显示预览。</p>
     }
@@ -115,6 +123,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
   if (!agentDef) return null;
   
   const colors = agentColorMapping[asset.agentId] || agentColorMapping['default'];
+  const isMinimalPreview = asset.agentId === 'agent.system.clock' || asset.agentId === 'agent.system.weather';
 
   return (
     <motion.div
@@ -131,9 +140,11 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
     >
       <header className="flex justify-between items-start mb-3">
         <div className="flex items-center space-x-3 min-w-0">
-          <div className={`w-10 h-10 ${colors.bg} rounded-lg shadow-inner flex items-center justify-center flex-shrink-0`}>
-            <agentDef.icon className={`w-6 h-6 ${colors.text}`} />
-          </div>
+          {!isMinimalPreview && (
+            <div className={`w-10 h-10 ${colors.bg} rounded-lg shadow-inner flex items-center justify-center flex-shrink-0`}>
+              <agentDef.icon className={`w-6 h-6 ${colors.text}`} />
+            </div>
+          )}
           <h3 className="font-semibold text-gray-800 truncate">{asset.name}</h3>
         </div>
         <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
@@ -154,7 +165,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
         </div>
       </header>
 
-      <main className="flex-grow mb-3 min-h-[4rem] flex items-center">
+      <main className={`flex-grow mb-3 min-h-[4rem] flex items-center ${isMinimalPreview ? 'justify-center' : ''}`}>
         <CardPreview />
       </main>
       

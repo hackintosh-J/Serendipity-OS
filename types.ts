@@ -25,6 +25,7 @@ export interface AgentDefinition {
 export interface SystemSettings {
   userName: string;
   theme: 'light'; // For future expansion
+  geminiApiKey: string | null;
 }
 
 export enum ModalType {

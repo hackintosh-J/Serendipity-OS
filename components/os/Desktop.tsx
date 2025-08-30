@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from './AgentBubble';
@@ -11,7 +12,7 @@ const Desktop: React.FC = () => {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   return (
-    <div className="h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100 overflow-y-auto p-4 sm:p-6 md:p-8">
+    <div className="h-full w-full bg-gradient-to-br from-rose-100 via-purple-100 to-indigo-100 overflow-y-auto p-4 sm:p-6 md:p-8">
       <motion.div layout className="max-w-3xl mx-auto grid gap-6">
         <AnimatePresence>
           {sortedAssets.map(asset => (

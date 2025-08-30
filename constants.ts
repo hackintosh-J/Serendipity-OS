@@ -1,7 +1,8 @@
 
+
 import { OSState, ModalType, AgentDefinition, AIPanelState } from './types';
-import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent } from './components/agents/index';
-import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon } from './assets/icons';
+import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent } from './components/agents/index';
+import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon } from './assets/icons';
 import React from 'react';
 
 const memoAgent: AgentDefinition = {
@@ -40,11 +41,31 @@ const helpAgent: AgentDefinition = {
     defaultState: {},
 };
 
+const clockAgent: AgentDefinition = {
+    id: 'agent.system.clock',
+    name: '时钟',
+    description: '显示当前时间。',
+    icon: ClockIcon,
+    component: ClockAgent,
+    defaultState: {},
+};
+
+const calculatorAgent: AgentDefinition = {
+    id: 'agent.system.calculator',
+    name: '计算器',
+    description: '执行基本的数学计算。',
+    icon: CalculatorIcon,
+    component: CalculatorAgent,
+    defaultState: { display: '0', firstOperand: null, operator: null, waitingForSecondOperand: false },
+};
+
 
 export const PRE_INSTALLED_AGENTS: { [key: string]: AgentDefinition } = {
     [memoAgent.id]: memoAgent,
     [browserAgent.id]: browserAgent,
     [weatherAgent.id]: weatherAgent,
+    [clockAgent.id]: clockAgent,
+    [calculatorAgent.id]: calculatorAgent,
     [helpAgent.id]: helpAgent
 };
 
@@ -64,7 +85,7 @@ const initialWelcomeAssetState = {
 - **点击Dock栏的AI图标** 与您的AI助手交谈。
 - **在AI助手中点击“创建”** 查看所有可用的Agent并创建新的资产。
 - **点击卡片** 打开它并进行交互。
-- **访问设置**（齿轮图标）来配置您的Gemini API密钥，这是激活AI功能所必需的。
+- **请求AI** 例如 "北京的天气怎么样？" 来与资产交互。
 
 祝您探索愉快！`
 };
@@ -74,6 +95,7 @@ export const INITIAL_OS_STATE: OSState = {
   settings: {
     userName: '探索者',
     theme: 'light',
+    geminiApiKey: null,
   },
   installedAgents: PRE_INSTALLED_AGENTS,
   activeAssets: {
@@ -92,6 +114,15 @@ export const INITIAL_OS_STATE: OSState = {
         name: '操作指南',
         state: {},
         position: { x: 250, y: 150 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    },
+    'clock-asset': {
+        id: 'clock-asset',
+        agentId: 'agent.system.clock',
+        name: '时钟',
+        state: {},
+        position: { x: 450, y: 200 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     }

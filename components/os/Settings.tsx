@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, ChangeEvent } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { ModalType, OSState } from '../../types';
@@ -11,14 +10,13 @@ import Input from '../shared/Input';
 const Settings: React.FC = () => {
   const { osState, dispatch, setActiveModal } = useOS();
   const [userName, setUserName] = useState(osState.settings.userName);
-  // FIX: Removed state for Gemini API key as it's no longer configured through the UI.
+  const [geminiApiKey, setGeminiApiKey] = useState(osState.settings.geminiApiKey || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     dispatch({
       type: 'UPDATE_SETTINGS',
-      // FIX: Removed geminiApiKey from the saved settings payload.
-      payload: { userName },
+      payload: { userName, geminiApiKey },
     });
     alert("设置已保存！");
     setActiveModal(ModalType.NONE);
@@ -66,7 +64,22 @@ const Settings: React.FC = () => {
             placeholder="您希望AI如何称呼您？"
           />
         </div>
-        {/* FIX: Removed the entire Gemini API Key input section. */}
+
+        <div>
+            <label htmlFor="geminiApiKey" className="block text-sm font-medium text-gray-700 mb-1">
+                Gemini API 密钥
+            </label>
+            <Input
+                id="geminiApiKey"
+                type="password"
+                value={geminiApiKey}
+                onChange={(e) => setGeminiApiKey(e.target.value)}
+                placeholder="在此输入您的 API 密钥"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+                您的密钥将仅保存在此浏览器的本地存储中，不会被发送到任何服务器。
+            </p>
+        </div>
         
         <div className="border-t pt-6 space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">系统状态管理</h3>

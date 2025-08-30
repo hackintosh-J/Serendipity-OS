@@ -24,7 +24,7 @@ const SystemBar: React.FC = () => {
   };
 
   return (
-    <header className="w-full h-8 bg-gray-100/80 backdrop-blur-sm flex items-center justify-between px-4 text-sm text-gray-800 shadow-sm z-50 flex-shrink-0">
+    <header className="w-full h-8 bg-gray-100/80 backdrop-blur-sm flex items-center justify-between px-4 text-sm text-gray-800 shadow-sm z-50 flex-shrink-0 sticky top-0">
       <div className="font-semibold">Serendipity OS</div>
       <div>{osState.settings.userName}</div>
       <div className="flex items-center space-x-3">

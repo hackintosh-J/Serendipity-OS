@@ -32,7 +32,7 @@ const BrowserAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) 
             value={inputValue}
             onChange={handleInputChange}
             placeholder="输入网址并按 Enter"
-            className="w-full px-3 py-1.5 bg-white/80 border border-gray-300 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="w-full px-3 py-1.5 bg-white/80 border border-gray-300 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
           />
         </form>
         <button onClick={handleOpenInNewTab} className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">在新标签页打开</button>

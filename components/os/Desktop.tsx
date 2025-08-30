@@ -11,12 +11,7 @@ const Desktop: React.FC = () => {
   const { settings, ui: { isControlCenterOpen } } = osState;
 
   const y = useMotionValue(0);
-  const gestureState = useRef({
-    isDragging: false,
-    isDecided: false,
-    startY: 0,
-  });
-
+  
   const pullDownY = useTransform(y, (v) => {
     if (v < 0) return 0;
     return Math.pow(v, 0.85); // Apply resistance
@@ -34,29 +29,70 @@ const Desktop: React.FC = () => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    const handlePointerMove = (event: PointerEvent) => {
-      if (!event.isPrimary) return;
+    const gesture = {
+      isDragging: false,
+      isGestureActive: false,
+      startY: 0,
+    };
 
-      const deltaY = event.clientY - gestureState.current.startY;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!event.isPrimary || gesture.isGestureActive) return;
+      
+      const grid = scrollContainer.firstElementChild as HTMLElement | null;
+      const firstCard = grid?.firstElementChild as HTMLElement | null;
 
-      if (!gestureState.current.isDecided) {
-        if (Math.abs(deltaY) < 5) return;
-
-        if (deltaY > 0 && scrollContainer.scrollTop === 0) {
-          gestureState.current.isDragging = true;
+      let isAtTop = false;
+      if (firstCard) {
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const firstCardRect = firstCard.getBoundingClientRect();
+        // This check is more robust for iOS overscroll (rubber banding) than scrollTop === 0.
+        // If the card's top is at or above the container's top, we are at the top.
+        if (firstCardRect.top >= containerRect.top) {
+          isAtTop = true;
         }
-        gestureState.current.isDecided = true;
+      } else {
+        // If there are no cards, rely on scrollTop.
+        isAtTop = scrollContainer.scrollTop <= 0;
       }
 
-      if (gestureState.current.isDragging) {
-        event.preventDefault();
-        scrollContainer.style.touchAction = 'none';
-        scrollContainer.style.overflowY = 'hidden';
+
+      if (isAtTop) {
+        gesture.isGestureActive = true;
+        gesture.isDragging = false;
+        gesture.startY = event.clientY;
+        
+        window.addEventListener('pointermove', handlePointerMove, { passive: false });
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
+      }
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!event.isPrimary || !gesture.isGestureActive) return;
+
+      const deltaY = event.clientY - gesture.startY;
+
+      if (!gesture.isDragging) {
+        if (Math.abs(deltaY) > 5) {
+          if (deltaY > 0) {
+            gesture.isDragging = true;
+            event.preventDefault();
+            scrollContainer.style.overflowY = 'hidden';
+            scrollContainer.style.touchAction = 'none';
+          } else {
+            handlePointerUp();
+          }
+        }
+      }
+
+      if (gesture.isDragging) {
         y.set(deltaY);
       }
     };
 
     const handlePointerUp = () => {
+      if (!gesture.isGestureActive) return;
+
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
@@ -64,7 +100,7 @@ const Desktop: React.FC = () => {
       scrollContainer.style.overflowY = 'auto';
       scrollContainer.style.touchAction = 'auto';
 
-      if (gestureState.current.isDragging) {
+      if (gesture.isDragging) {
         const pullThreshold = 100;
         if (y.get() > pullThreshold) {
           setControlCenterOpen(true);
@@ -72,22 +108,9 @@ const Desktop: React.FC = () => {
           animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
         }
       }
-    };
-    
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!event.isPrimary || gestureState.current.isDragging) return;
       
-      if (scrollContainer.scrollTop === 0) {
-          gestureState.current = {
-            isDragging: false,
-            isDecided: false,
-            startY: event.clientY,
-          };
-          
-          window.addEventListener('pointermove', handlePointerMove, { passive: false });
-          window.addEventListener('pointerup', handlePointerUp);
-          window.addEventListener('pointercancel', handlePointerUp);
-      }
+      gesture.isGestureActive = false;
+      gesture.isDragging = false;
     };
 
     scrollContainer.addEventListener('pointerdown', handlePointerDown, { capture: true });

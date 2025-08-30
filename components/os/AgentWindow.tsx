@@ -48,7 +48,7 @@ const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, cl
             <XIcon className="w-6 h-6" />
         </button>
       </header>
-      <div className="flex-grow p-4 overflow-y-auto">
+      <div className="flex-grow p-4 overflow-y-auto overscroll-behavior-y-contain">
         <AgentComponent instance={asset} updateState={updateState} close={close} />
       </div>
     </motion.div>

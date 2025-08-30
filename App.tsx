@@ -113,7 +113,7 @@ const SerendipityOS: React.FC = () => {
   }
 
   return (
-    <div className="h-screen w-screen bg-gray-100 font-sans flex flex-col overflow-hidden">
+    <div className="h-full w-full bg-gray-100 font-sans flex flex-col overflow-hidden">
       <SystemBar />
       <MainViewport />
       <div className="fixed bottom-0 left-0 right-0 z-40">

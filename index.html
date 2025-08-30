@@ -6,6 +6,12 @@
     <title>Serendipity OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent any unwanted scrollbars on the root elements */
+      }
       body {
         /* Prevent the user from selecting text, making it feel more like a native app */
         -webkit-user-select: none; /* Safari */

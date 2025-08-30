@@ -1,15 +1,9 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
-import { motion, AnimatePresence, useMotionValue, useTransform, animate, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { ActiveAssetInstance } from '../../types';
 import { ChevronDownIcon } from '../../assets/icons';
-
-// Define PanInfo locally for robust gesture handling.
-type PanInfo = {
-  offset: { x: number; y: number; };
-  velocity: { x: number; y: number; };
-};
 
 const Desktop: React.FC = () => {
   const { osState, setControlCenterOpen } = useOS();
@@ -17,21 +11,84 @@ const Desktop: React.FC = () => {
   const { settings, ui: { isControlCenterOpen } } = osState;
 
   const y = useMotionValue(0);
-  const dragControls = useDragControls();
+  const gestureState = useRef({ isDragging: false, startY: 0, canDrag: false });
 
+  const pullDownY = useTransform(y, (v) => {
+    if (v < 0) return 0;
+    return Math.pow(v, 0.85); // Apply resistance
+  });
   const indicatorOpacity = useTransform(y, [0, 80], [0, 1]);
   const indicatorScale = useTransform(y, [0, 80], [0.8, 1]);
 
   useEffect(() => {
-    // This effect ensures that when the control center is closed externally,
-    // the desktop animates back to its original position.
     if (!isControlCenterOpen) {
-        animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
+      animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
     }
   }, [isControlCenterOpen, y]);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!event.isPrimary || gestureState.current.canDrag) return;
+      
+      if (scrollContainer.scrollTop === 0) {
+        gestureState.current = { isDragging: false, startY: event.clientY, canDrag: true };
+        window.addEventListener('pointermove', handlePointerMove, { passive: false });
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
+      }
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!gestureState.current.canDrag) return;
+
+      const deltaY = event.clientY - gestureState.current.startY;
+      
+      if (deltaY > 0) {
+        event.preventDefault(); // Prevent browser pull-to-refresh
+        if (!gestureState.current.isDragging) {
+          gestureState.current.isDragging = true;
+          scrollContainer.style.overflowY = 'hidden'; // Disable scroll during view drag
+        }
+        y.set(deltaY);
+      } else {
+        if (!gestureState.current.isDragging) {
+          handlePointerUp(); // Abort if user scrolls up first
+        }
+      }
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      scrollContainer.style.overflowY = 'auto'; // Restore scroll
+      
+      if (gestureState.current.isDragging) {
+        const pullThreshold = 100;
+        if (y.get() > pullThreshold) {
+          setControlCenterOpen(true);
+        } else {
+          animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
+        }
+      }
+      
+      gestureState.current = { isDragging: false, startY: 0, canDrag: false };
+    };
+
+    scrollContainer.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      scrollContainer.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [y, setControlCenterOpen]);
   
   const assetPriority = (asset: ActiveAssetInstance) => {
-    if (asset.agentId === 'agent.system.insight') return -1; // Insights always on top
+    if (asset.agentId === 'agent.system.insight') return -1;
     if (asset.agentId === 'agent.system.clock' || asset.agentId === 'agent.system.weather' || asset.agentId === 'agent.system.calculator') return 0;
     return 1;
   };
@@ -43,44 +100,6 @@ const Desktop: React.FC = () => {
         if (priorityA !== priorityB) return priorityA - priorityB;
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }), [osState.activeAssets]);
-    
-  const resetTouchAction = () => {
-    const scroller = scrollContainerRef.current;
-    if (scroller) {
-      scroller.style.touchAction = 'auto';
-    }
-  };
-    
-  const handlePointerDown = (event: React.PointerEvent) => {
-    // Only initiate a drag if the scroll container is at the very top.
-    // This is the key to differentiating between scrolling the content and pulling the entire view.
-    if (scrollContainerRef.current?.scrollTop === 0) {
-      const scroller = scrollContainerRef.current;
-      if (scroller) {
-        // Temporarily disable the browser's native vertical scrolling/panning
-        // to allow our drag gesture to take over without conflict.
-        scroller.style.touchAction = 'pan-x';
-      }
-      dragControls.start(event, { snapToCursor: false });
-    }
-  };
-
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    resetTouchAction(); // Always restore native scrolling when the drag ends.
-    
-    const pullThreshold = 100;
-    const velocityThreshold = 500;
-    const currentY = y.get();
-
-    if (currentY > pullThreshold || info.velocity.y > velocityThreshold) {
-      setControlCenterOpen(true);
-      // The `y` value remains at its current position, preventing the "snap back".
-      // The useEffect hook will handle snapping back only when the CC is closed.
-    } else {
-      // If not pulled far enough, spring back to the top.
-      animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
-    }
-  };
 
   return (
     <div 
@@ -100,21 +119,13 @@ const Desktop: React.FC = () => {
         </motion.div>
         
         <motion.div
-            drag="y"
-            dragListener={false}
-            dragControls={dragControls}
-            onDragEnd={handleDragEnd}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.5 }}
-            style={{ y }}
+            style={{ y: pullDownY }}
             className="h-full w-full absolute inset-0"
         >
           <div
               ref={scrollContainerRef}
-              className="h-full w-full overflow-y-auto overscroll-behavior-y-contain cursor-grab"
-              onPointerDownCapture={handlePointerDown}
-              onPointerUp={resetTouchAction}
-              onPointerCancel={resetTouchAction}
+              style={{ touchAction: 'pan-y' }}
+              className="h-full w-full overflow-y-auto overscroll-behavior-y-contain"
           >
               <motion.div 
                   layout 

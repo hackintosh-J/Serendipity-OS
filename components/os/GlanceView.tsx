@@ -1,13 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useOS } from '../../contexts/OSContext';
-import { motion, useMotionValue, useTransform, animate, useDragControls } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { ChevronDownIcon } from '../../assets/icons';
-
-// Define PanInfo locally for robust gesture handling.
-type PanInfo = {
-  offset: { x: number; y: number; };
-  velocity: { x: number; y: number; };
-};
 
 const GlanceView: React.FC = () => {
   const { osState, viewAsset, setControlCenterOpen } = useOS();
@@ -15,51 +9,84 @@ const GlanceView: React.FC = () => {
   const { ui: { isControlCenterOpen } } = osState;
 
   const y = useMotionValue(0);
-  const dragControls = useDragControls();
+  const gestureState = useRef({ isDragging: false, startY: 0, canDrag: false });
 
+  const pullDownY = useTransform(y, (v) => {
+    if (v < 0) return 0;
+    return Math.pow(v, 0.85); // Apply resistance
+  });
   const indicatorOpacity = useTransform(y, [0, 80], [0, 1]);
   const indicatorScale = useTransform(y, [0, 80], [0.8, 1]);
 
   useEffect(() => {
     if (!isControlCenterOpen) {
-        animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
+      animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
     }
   }, [isControlCenterOpen, y]);
 
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!event.isPrimary || gestureState.current.canDrag) return;
+      
+      if (scrollContainer.scrollTop === 0) {
+        gestureState.current = { isDragging: false, startY: event.clientY, canDrag: true };
+        window.addEventListener('pointermove', handlePointerMove, { passive: false });
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
+      }
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!gestureState.current.canDrag) return;
+
+      const deltaY = event.clientY - gestureState.current.startY;
+      
+      if (deltaY > 0) {
+        event.preventDefault(); // Prevent browser pull-to-refresh
+        if (!gestureState.current.isDragging) {
+          gestureState.current.isDragging = true;
+          scrollContainer.style.overflowY = 'hidden'; // Disable scroll during view drag
+        }
+        y.set(deltaY);
+      } else {
+        if (!gestureState.current.isDragging) {
+          handlePointerUp(); // Abort if user scrolls up first
+        }
+      }
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      scrollContainer.style.overflowY = 'auto'; // Restore scroll
+      
+      if (gestureState.current.isDragging) {
+        const pullThreshold = 100;
+        if (y.get() > pullThreshold) {
+          setControlCenterOpen(true);
+        } else {
+          animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
+        }
+      }
+      
+      gestureState.current = { isDragging: false, startY: 0, canDrag: false };
+    };
+
+    scrollContainer.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      scrollContainer.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [y, setControlCenterOpen]);
+
   const sortedAssets = Object.values(osState.activeAssets)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    
-  const resetTouchAction = () => {
-    const scroller = scrollContainerRef.current;
-    if (scroller) {
-      scroller.style.touchAction = 'auto';
-    }
-  };
-
-  const handlePointerDown = (event: React.PointerEvent) => {
-    if (scrollContainerRef.current?.scrollTop === 0) {
-      const scroller = scrollContainerRef.current;
-      if (scroller) {
-        // Temporarily disable native vertical scrolling to allow our gesture to take over.
-        scroller.style.touchAction = 'pan-x';
-      }
-      dragControls.start(event, { snapToCursor: false });
-    }
-  };
-
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    resetTouchAction(); // Always restore native scrolling.
-    
-    const pullThreshold = 100;
-    const velocityThreshold = 500;
-    const currentY = y.get();
-
-    if (currentY > pullThreshold || info.velocity.y > velocityThreshold) {
-      setControlCenterOpen(true);
-    } else {
-      animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
-    }
-  };
 
   return (
     <div 
@@ -75,21 +102,13 @@ const GlanceView: React.FC = () => {
         </motion.div>
         
         <motion.div
-            drag="y"
-            dragListener={false}
-            dragControls={dragControls}
-            onDragEnd={handleDragEnd}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.5 }}
-            style={{ y }}
+            style={{ y: pullDownY }}
             className="h-full w-full absolute inset-0"
         >
           <div
             ref={scrollContainerRef}
-            className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6 md:p-8 cursor-grab"
-            onPointerDownCapture={handlePointerDown}
-            onPointerUp={resetTouchAction}
-            onPointerCancel={resetTouchAction}
+            style={{ touchAction: 'pan-y' }}
+            className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6 md:p-8"
           >
               <div className="max-w-3xl mx-auto">
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">速览</h1>

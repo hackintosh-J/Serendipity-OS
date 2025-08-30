@@ -27,70 +27,72 @@ const GlanceView: React.FC = () => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    let isTouchingAtTop = false;
-    let hasTriggered = false;
+    let startY = 0;
+    let isDragging = false;
+    let canDrag = false;
 
-    const handlePointerMove = () => {
-        if (!isTouchingAtTop || hasTriggered) return;
-
-        const grid = scrollContainer.querySelector('.grid') as HTMLElement | null;
-        const firstCard = grid?.firstElementChild as HTMLElement | null;
-        if (!firstCard) return;
-
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const firstCardRect = firstCard.getBoundingClientRect();
+    const handlePointerMove = (event: PointerEvent) => {
+        if (!isDragging) return;
         
-        const pullDistance = firstCardRect.top - containerRect.top;
-        
-        y.set(pullDistance > 0 ? pullDistance : 0);
+        event.preventDefault(); // Prevent browser's default overscroll behavior
 
-        const pullThreshold = 60;
-        if (pullDistance > pullThreshold) {
-            setControlCenterOpen(true);
-            hasTriggered = true;
-        }
+        const deltaY = event.clientY - startY;
+        // Follow finger but don't go above the starting point.
+        // This is the key fix to prevent the "bounce back" issue.
+        y.set(Math.max(0, deltaY));
     };
     
     const handlePointerUp = () => {
+        if (!isDragging) return;
+
+        isDragging = false;
+        canDrag = false;
         window.removeEventListener('pointermove', handlePointerMove);
-        if (isTouchingAtTop && !hasTriggered) {
+        window.removeEventListener('pointerup', handlePointerUp);
+        window.removeEventListener('pointercancel', handlePointerUp);
+        
+        const pullThreshold = 80; // Distance needed to pull to open
+        if (y.get() > pullThreshold) {
+            setControlCenterOpen(true);
+        } else {
             animate(y, 0, { type: 'spring', stiffness: 500, damping: 50 });
         }
-        isTouchingAtTop = false;
-        hasTriggered = false;
     };
 
     const handlePointerDown = (event: PointerEvent) => {
       if (!event.isPrimary || isControlCenterOpen) return;
       
-      hasTriggered = false;
-      const grid = scrollContainer.querySelector('.grid') as HTMLElement | null;
-      const firstCard = grid?.firstElementChild as HTMLElement | null;
-
-      let isAtTop = false;
-      if (firstCard) {
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const firstCardRect = firstCard.getBoundingClientRect();
-        const tolerance = 15;
-        if (firstCardRect.top >= containerRect.top - tolerance) {
-          isAtTop = true;
-        }
-      } else {
-        isAtTop = scrollContainer.scrollTop <= 0;
-      }
+      const isAtTop = scrollContainer.scrollTop <= 0;
       
       if (isAtTop) {
-        isTouchingAtTop = true;
-        window.addEventListener('pointermove', handlePointerMove);
+        canDrag = true;
+        startY = event.clientY;
+
+        const startDrag = (moveEvent: PointerEvent) => {
+          // Start dragging only on a clear downward movement
+          if (canDrag && moveEvent.clientY > startY) {
+            isDragging = true;
+            window.removeEventListener('pointermove', startDrag);
+            window.addEventListener('pointermove', handlePointerMove, { passive: false });
+            handlePointerMove(moveEvent); // Process the initial movement
+          } else if (canDrag && moveEvent.clientY < startY) {
+            // If user scrolls up first, cancel the pull-down gesture
+            canDrag = false;
+            window.removeEventListener('pointermove', startDrag);
+          }
+        };
+
+        window.addEventListener('pointermove', startDrag, { passive: true });
         window.addEventListener('pointerup', handlePointerUp, { once: true });
         window.addEventListener('pointercancel', handlePointerUp, { once: true });
       }
     };
     
-    scrollContainer.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    // Use capture phase to catch the event before child elements do.
+    scrollContainer.addEventListener('pointerdown', handlePointerDown, { capture: true });
 
     return () => {
-      scrollContainer.removeEventListener('pointerdown', handlePointerDown);
+      scrollContainer.removeEventListener('pointerdown', handlePointerDown, { capture: true });
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);

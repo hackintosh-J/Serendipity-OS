@@ -1,5 +1,3 @@
-
-
 import { OSState, ModalType, AgentDefinition, AIPanelState } from './types';
 import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent } from './components/agents/index';
 import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon } from './assets/icons';
@@ -12,6 +10,7 @@ const memoAgent: AgentDefinition = {
     icon: MemoIcon,
     component: MemoAgent,
     defaultState: { content: '' },
+    size: 'full',
 };
 
 const browserAgent: AgentDefinition = {
@@ -21,6 +20,7 @@ const browserAgent: AgentDefinition = {
     icon: BrowserIcon,
     component: BrowserAgent,
     defaultState: { url: 'about:blank', inputValue: '' },
+    size: 'full',
 };
 
 const weatherAgent: AgentDefinition = {
@@ -30,6 +30,7 @@ const weatherAgent: AgentDefinition = {
     icon: CloudIcon,
     component: WeatherAgent,
     defaultState: { location: '北京', data: null, lastUpdated: null },
+    size: 'small',
 };
 
 const helpAgent: AgentDefinition = {
@@ -39,6 +40,7 @@ const helpAgent: AgentDefinition = {
     icon: HelpCircleIcon,
     component: HelpAgent,
     defaultState: {},
+    size: 'full',
 };
 
 const clockAgent: AgentDefinition = {
@@ -48,6 +50,7 @@ const clockAgent: AgentDefinition = {
     icon: ClockIcon,
     component: ClockAgent,
     defaultState: {},
+    size: 'small',
 };
 
 const calculatorAgent: AgentDefinition = {
@@ -57,6 +60,7 @@ const calculatorAgent: AgentDefinition = {
     icon: CalculatorIcon,
     component: CalculatorAgent,
     defaultState: { display: '0', firstOperand: null, operator: null, waitingForSecondOperand: false },
+    size: 'small',
 };
 
 
@@ -82,6 +86,8 @@ const initialWelcomeAssetState = {
 
 ## 如何开始？
 
+- **向下滑动** 打开控制中心。
+- **向左滑动** 进入速览模式，查看所有资产。
 - **点击Dock栏的AI图标** 与您的AI助手交谈。
 - **在AI助手中点击“创建”** 查看所有可用的Agent并创建新的资产。
 - **点击卡片** 打开它并进行交互。
@@ -133,5 +139,7 @@ export const INITIAL_OS_STATE: OSState = {
     notifications: [],
     aiPanelState: 'closed',
     assetCreationData: null,
+    isControlCenterOpen: false,
+    currentView: 'desktop',
   },
 };

@@ -15,8 +15,8 @@ interface Message {
 
 const AIPanel: React.FC = () => {
   const { osState, dispatch, setAIPanelState, createAsset, deleteAsset } = useOS();
-  // FIX: Property 'settings' does not exist on type 'UIState'.
-  const { ui: { aiPanelState }, settings } = osState;
+  const { ui, settings } = osState;
+  const { aiPanelState } = ui;
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isThinkingCollapsed, setIsThinkingCollapsed] = useState(true);

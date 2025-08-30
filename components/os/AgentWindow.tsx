@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ActiveAssetInstance, AgentDefinition } from '../../types';
 import { XIcon } from '../../assets/icons';
@@ -23,7 +22,7 @@ const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, cl
 
   return (
     <motion.div
-      layoutId={`asset-card-${asset.id}`}
+      layoutId={`asset-bubble-${asset.id}`}
       variants={viewerVariants}
       initial="hidden"
       animate="visible"

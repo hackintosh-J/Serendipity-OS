@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 
 const createIcon = (path: React.ReactNode): React.FC<{ className?: string }> => 
@@ -40,6 +38,9 @@ export const SendIcon = createIcon(<><line x1="22" y1="2" x2="11" y2="13"></line
 export const ChevronDownIcon = createIcon(<><polyline points="6 9 12 15 18 9"></polyline></>);
 export const CalculatorIcon = createIcon(<><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="12" y2="16"></line></>);
 export const ClockIcon = createIcon(<><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></>);
+export const MoonIcon = createIcon(<><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></>);
+export const SunIcon = createIcon(<><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></>);
+export const BluetoothIcon = createIcon(<><path d="m7 7 10 10-5 5V2l5 5L7 17"></path></>);
 
 
 export default createIcon;

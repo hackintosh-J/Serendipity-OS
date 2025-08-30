@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import { OSState, OSAction, ActiveAssetInstance, ModalType, AIPanelState } from '../types';
 import { INITIAL_OS_STATE } from '../constants';
@@ -111,6 +110,12 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
 
     case 'SET_AI_PANEL_STATE':
         return { ...state, ui: { ...state.ui, aiPanelState: action.payload, activeModal: ModalType.NONE }};
+    
+    case 'TOGGLE_CONTROL_CENTER':
+        return { ...state, ui: { ...state.ui, isControlCenterOpen: action.payload }};
+
+    case 'SET_CURRENT_VIEW':
+        return { ...state, ui: { ...state.ui, currentView: action.payload }};
 
     case 'IMPORT_STATE': {
         const importedState = action.payload;
@@ -163,6 +168,8 @@ interface IOSContext {
   closeAssetView: () => void;
   setActiveModal: (modal: ModalType) => void;
   setAIPanelState: (state: AIPanelState) => void;
+  setControlCenterOpen: (isOpen: boolean) => void;
+  setCurrentView: (view: 'desktop' | 'glance') => void;
 }
 
 const OSContext = createContext<IOSContext | undefined>(undefined);
@@ -233,8 +240,16 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     dispatch({ type: 'SET_AI_PANEL_STATE', payload: state });
   }, []);
 
+  const setControlCenterOpen = useCallback((isOpen: boolean) => {
+      dispatch({ type: 'TOGGLE_CONTROL_CENTER', payload: isOpen });
+  }, []);
+
+  const setCurrentView = useCallback((view: 'desktop' | 'glance') => {
+      dispatch({ type: 'SET_CURRENT_VIEW', payload: view });
+  }, []);
+
   return (
-    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState }}>
+    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView }}>
       {children}
     </OSContext.Provider>
   );

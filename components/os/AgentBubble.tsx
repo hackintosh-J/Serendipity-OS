@@ -1,7 +1,5 @@
-
-
-import React from 'react';
-import { ActiveAssetInstance, AgentDefinition } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { ActiveAssetInstance } from '../../types';
 import { useOS } from '../../contexts/OSContext';
 import { astService } from '../../services/astService';
 import { CloudIcon, DownloadIcon, ClockIcon, CalculatorIcon } from '../../assets/icons';
@@ -27,10 +25,38 @@ const agentColorMapping: { [key: string]: { bg: string; text: string; } } = {
     'default': { bg: 'bg-gray-100', text: 'text-gray-800' },
 };
 
+const LiveClockPreview: React.FC = () => {
+    const [time, setTime] = useState(new Date());
+    useEffect(() => {
+        const timerId = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timerId);
+    }, []);
+    return (
+         <div className="flex items-center space-x-4 text-gray-700">
+            <ClockIcon className="w-10 h-10 text-indigo-500" />
+            <p className="text-2xl font-mono tabular-nums">
+                {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+            </p>
+        </div>
+    );
+};
 
 const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
-  const { osState, viewAsset } = useOS();
+  const { osState, viewAsset, dispatch } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
+
+  // Simulate weather updates
+  useEffect(() => {
+    if (asset.agentId === 'agent.system.weather' && asset.state.data) {
+        const thirtyMinutes = 30 * 60 * 1000;
+        const lastUpdated = new Date(asset.state.lastUpdated).getTime();
+        if (Date.now() - lastUpdated > thirtyMinutes) {
+            const newData = { ...asset.state.data, temp: asset.state.data.temp + (Math.random() - 0.5) * 2 };
+            dispatch({ type: 'UPDATE_ASSET_STATE', payload: { assetId: asset.id, newState: { ...asset.state, data: newData, lastUpdated: new Date().toISOString() } } });
+        }
+    }
+  }, [asset.agentId, asset.id, asset.state, dispatch]);
+
 
   const handleExport = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -58,7 +84,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
                 <div className="flex items-center space-x-4">
                     <CloudIcon className="w-10 h-10 text-blue-500" />
                     <div>
-                        <p className="text-2xl font-semibold">{weatherData.temp}°</p>
+                        <p className="text-2xl font-semibold">{weatherData.temp.toFixed(0)}°</p>
                         <p className="text-gray-600">{asset.state.location} - {weatherData.condition}</p>
                     </div>
                 </div>
@@ -66,12 +92,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
         case 'agent.system.help':
             return <p className="text-sm text-gray-600 italic">操作指南和核心理念介绍。</p>;
         case 'agent.system.clock':
-            return (
-                <div className="flex items-center space-x-4 text-gray-700">
-                    <ClockIcon className="w-10 h-10 text-indigo-500" />
-                    <p className="text-lg">实时显示当前时间。</p>
-                </div>
-            );
+            return <LiveClockPreview />;
         case 'agent.system.calculator':
             return (
                  <div className="flex items-center space-x-4 text-gray-700">
@@ -90,14 +111,14 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
 
   return (
     <motion.div
-      layoutId={`asset-card-${asset.id}`}
+      layoutId={`asset-bubble-${asset.id}`}
       variants={cardVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
       transition={{ type: 'spring', duration: 0.5 }}
       whileHover={{ scale: 1.02, y: -4, transition: { type: 'spring', duration: 0.2 } }}
-      className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-purple-200/80"
+      className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-purple-200/80 h-full"
       onClick={handleCardClick}
       aria-label={`打开 ${asset.name}`}
     >
@@ -119,7 +140,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
         </div>
       </header>
 
-      <main className="flex-grow mb-3 min-h-[4rem]">
+      <main className="flex-grow mb-3 min-h-[4rem] flex items-center">
         <CardPreview />
       </main>
       

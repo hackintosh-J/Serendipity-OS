@@ -145,7 +145,6 @@ class GeminiService {
 
             // Extract thinking content
             const thinkStart = fullText.indexOf('<thinking>');
-            // FIX: Cannot find name 'full'.
             const thinkEnd = fullText.indexOf('</thinking>');
 
             if (thinkStart !== -1) {

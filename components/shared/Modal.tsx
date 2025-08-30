@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 import { XIcon } from '../../assets/icons';
 import { motion } from 'framer-motion';
@@ -43,7 +42,7 @@ const Modal: React.FC<ModalProps> = ({ title, icon: Icon, onClose, children }) =
                 <XIcon className="w-5 h-5" />
             </button>
         </header>
-        <div className="flex-grow overflow-y-auto">
+        <div className="flex-grow overflow-y-auto max-h-[70vh]">
             {children}
         </div>
       </motion.div>

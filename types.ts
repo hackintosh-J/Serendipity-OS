@@ -19,6 +19,7 @@ export interface AgentDefinition {
   icon: React.FC<{ className?: string }>;
   component: React.FC<{ instance: ActiveAssetInstance; updateState: (newState: any) => void; close: () => void; }>;
   defaultState: any;
+  size?: 'small' | 'full';
 }
 
 // System-wide settings
@@ -44,6 +45,8 @@ export interface UIState {
     notifications: any[];
     aiPanelState: AIPanelState;
     assetCreationData: { agentId: string; agentName: string; } | null;
+    isControlCenterOpen: boolean;
+    currentView: 'desktop' | 'glance';
 }
 
 // The entire state of the operating system
@@ -68,8 +71,10 @@ export type OSAction =
   | { type: 'CLOSE_ASSET_VIEW' }
   | { type: 'SET_ACTIVE_MODAL'; payload: ModalType }
   | { type: 'SET_AI_PANEL_STATE'; payload: AIPanelState }
-  | { type: 'PROMPT_CREATE_ASSET'; payload: { agentId: string; agentName: string; } }
-  | { type: 'IMPORT_STATE'; payload: Partial<OSState> };
+  | { type: 'PROMPT_CREATE_ASSET'; payload: { agentId: string; agentName:string; } }
+  | { type: 'IMPORT_STATE'; payload: Partial<OSState> }
+  | { type: 'TOGGLE_CONTROL_CENTER'; payload: boolean }
+  | { type: 'SET_CURRENT_VIEW'; payload: 'desktop' | 'glance' };
 
 // Props for Agent components
 export interface AgentComponentProps {

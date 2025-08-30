@@ -2,10 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Serendipity OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <style>
+      body {
+        /* Prevent the user from selecting text, making it feel more like a native app */
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10 and IE 11 */
+        user-select: none; /* Standard syntax */
+        /* Disable the tap highlight color on mobile Safari */
+        -webkit-tap-highlight-color: transparent;
+        /* Prevent pull-to-refresh and overscroll glow */
+        overscroll-behavior: none;
+      }
+      /* Re-enable text selection for input fields so users can still copy/paste */
+      input, textarea {
+        -webkit-user-select: auto;
+        -ms-user-select: auto;
+        user-select: auto;
+      }
+    </style>
     <script type="importmap">
 {
   "imports": {

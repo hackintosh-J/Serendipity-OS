@@ -1,5 +1,3 @@
-
-
 import { OSState, ActiveAssetInstance } from '../types';
 
 class ASTService {
@@ -81,10 +79,15 @@ class ASTService {
             if (importedData.settings && importedData.activeAssets) {
               resolve(importedData as Partial<OSState>);
             } else if (importedData.asset && importedData.agentDefinition) {
-              // This is an ast_bubble file
+              // This is an ast_bubble file.
+              // Generate a new ID to prevent conflicts with existing assets.
+              const newAsset = importedData.asset as ActiveAssetInstance;
+              const newId = `aa-${crypto.randomUUID()}`;
+              newAsset.id = newId;
+
               const singleAssetImport: Partial<OSState> = {
                   installedAgents: { [importedData.agentDefinition.id]: importedData.agentDefinition },
-                  activeAssets: { [importedData.asset.id]: importedData.asset }
+                  activeAssets: { [newId]: newAsset }
               };
               resolve(singleAssetImport);
             }

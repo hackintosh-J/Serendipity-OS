@@ -9,7 +9,11 @@ const GlanceView: React.FC = () => {
   const { ui: { isControlCenterOpen } } = osState;
 
   const y = useMotionValue(0);
-  const gestureState = useRef({ isDragging: false, startY: 0, canDrag: false });
+  const gestureState = useRef({
+    isDragging: false,
+    isDecided: false,
+    startY: 0,
+  });
 
   const pullDownY = useTransform(y, (v) => {
     if (v < 0) return 0;
@@ -28,33 +32,25 @@ const GlanceView: React.FC = () => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!event.isPrimary || gestureState.current.canDrag) return;
-      
-      if (scrollContainer.scrollTop === 0) {
-        gestureState.current = { isDragging: false, startY: event.clientY, canDrag: true };
-        window.addEventListener('pointermove', handlePointerMove, { passive: false });
-        window.addEventListener('pointerup', handlePointerUp);
-        window.addEventListener('pointercancel', handlePointerUp);
-      }
-    };
-
     const handlePointerMove = (event: PointerEvent) => {
-      if (!gestureState.current.canDrag) return;
+      if (!event.isPrimary) return;
 
       const deltaY = event.clientY - gestureState.current.startY;
-      
-      if (deltaY > 0) {
-        event.preventDefault(); // Prevent browser pull-to-refresh
-        if (!gestureState.current.isDragging) {
+
+      if (!gestureState.current.isDecided) {
+        if (Math.abs(deltaY) < 5) return;
+
+        if (deltaY > 0 && scrollContainer.scrollTop === 0) {
           gestureState.current.isDragging = true;
-          scrollContainer.style.overflowY = 'hidden'; // Disable scroll during view drag
         }
+        gestureState.current.isDecided = true;
+      }
+
+      if (gestureState.current.isDragging) {
+        event.preventDefault();
+        scrollContainer.style.touchAction = 'none';
+        scrollContainer.style.overflowY = 'hidden';
         y.set(deltaY);
-      } else {
-        if (!gestureState.current.isDragging) {
-          handlePointerUp(); // Abort if user scrolls up first
-        }
       }
     };
 
@@ -62,8 +58,10 @@ const GlanceView: React.FC = () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
-      scrollContainer.style.overflowY = 'auto'; // Restore scroll
       
+      scrollContainer.style.overflowY = 'auto';
+      scrollContainer.style.touchAction = 'auto';
+
       if (gestureState.current.isDragging) {
         const pullThreshold = 100;
         if (y.get() > pullThreshold) {
@@ -72,13 +70,28 @@ const GlanceView: React.FC = () => {
           animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
         }
       }
+    };
+    
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!event.isPrimary || gestureState.current.isDragging) return;
       
-      gestureState.current = { isDragging: false, startY: 0, canDrag: false };
+      if (scrollContainer.scrollTop === 0) {
+          gestureState.current = {
+            isDragging: false,
+            isDecided: false,
+            startY: event.clientY,
+          };
+          
+          window.addEventListener('pointermove', handlePointerMove, { passive: false });
+          window.addEventListener('pointerup', handlePointerUp);
+          window.addEventListener('pointercancel', handlePointerUp);
+      }
     };
 
-    scrollContainer.addEventListener('pointerdown', handlePointerDown);
+    scrollContainer.addEventListener('pointerdown', handlePointerDown, { capture: true });
+
     return () => {
-      scrollContainer.removeEventListener('pointerdown', handlePointerDown);
+      scrollContainer.removeEventListener('pointerdown', handlePointerDown, { capture: true });
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
@@ -107,7 +120,6 @@ const GlanceView: React.FC = () => {
         >
           <div
             ref={scrollContainerRef}
-            style={{ touchAction: 'pan-y' }}
             className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6 md:p-8"
           >
               <div className="max-w-3xl mx-auto">

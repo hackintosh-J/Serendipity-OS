@@ -5,10 +5,11 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { ActiveAssetInstance } from '../../types';
 import { ChevronDownIcon } from '../../assets/icons';
 
-// FIX: Add `velocity` to PanInfo type to enable more robust gesture detection.
+// FIX: Add `delta` to PanInfo type definition to correctly handle gesture changes frame by frame.
 type PanInfo = {
   offset: { x: number; y: number; };
   velocity: { x: number; y: number; };
+  delta: { x: number; y: number; };
 };
 
 const Desktop: React.FC = () => {
@@ -17,9 +18,8 @@ const Desktop: React.FC = () => {
   const pullIndicatorControls = useAnimation();
   const { settings } = osState;
   
-  // Refs to manage pull-to-open state within gestures without causing re-renders.
-  const isPullingRef = useRef(false);
-  const pullStartOffsetYRef = useRef(0);
+  // Use a ref to track the accumulated pull distance during a single gesture.
+  const pullDistanceRef = useRef(0);
 
   const assetPriority = (asset: ActiveAssetInstance) => {
     if (asset.agentId === 'agent.system.insight') return -1; // Insights always on top
@@ -35,42 +35,40 @@ const Desktop: React.FC = () => {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }), [osState.activeAssets]);
     
+  // This handler now uses the gesture's delta to accumulate pull distance,
+  // which correctly handles the transition from scrolling to over-scrolling.
   const handlePan = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
     const atTop = scrollContainer.scrollTop === 0;
-    // Use velocity to detect downward motion, which is more reliable than offset.
-    const isPanningDown = info.velocity.y > 0;
+    const isPanningDown = info.delta.y > 0;
 
-    // Condition to START a pull gesture: at the top, moving down, and not already pulling.
-    if (atTop && isPanningDown && !isPullingRef.current) {
-      isPullingRef.current = true;
-      // Record the offset at the exact moment the pull begins.
-      pullStartOffsetYRef.current = info.offset.y;
-    }
-
-    if (isPullingRef.current) {
-      // If the user starts scrolling the content again, cancel the pull gesture.
-      if (scrollContainer.scrollTop > 0) {
-        isPullingRef.current = false;
-        pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
-        return;
+    if (atTop && isPanningDown) {
+      // At the top and pulling down: this is the pull-to-open gesture.
+      // We must prevent the browser's default pull-to-refresh action.
+      if (event.cancelable) {
+        event.preventDefault();
       }
       
-      // Calculate pull distance relative to where the pull started.
-      const pullDistance = Math.max(0, info.offset.y - pullStartOffsetYRef.current);
+      // Accumulate the pull distance from the delta of each frame.
+      pullDistanceRef.current += info.delta.y;
 
-      if (pullDistance > 0) {
-        const limitedPullDistance = Math.min(pullDistance, 150);
-        const progress = limitedPullDistance / 150;
+      // Update the pull indicator's animation based on the accumulated distance.
+      const limitedPullDistance = Math.min(pullDistanceRef.current, 150);
+      const progress = limitedPullDistance / 150;
 
-        pullIndicatorControls.start({
-          opacity: progress,
-          scale: 0.8 + progress * 0.2,
-          y: limitedPullDistance / 2,
-          transition: { duration: 0 } // Update instantly with finger movement
-        });
+      pullIndicatorControls.start({
+        opacity: progress,
+        scale: 0.8 + progress * 0.2,
+        y: limitedPullDistance / 2,
+        transition: { duration: 0 }
+      });
+    } else {
+      // If we are not at the top, or if panning up, reset the pull gesture state.
+      if (pullDistanceRef.current > 0) {
+        pullDistanceRef.current = 0;
+        pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
       }
     }
   };
@@ -78,16 +76,13 @@ const Desktop: React.FC = () => {
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const pullThreshold = 50; 
     
-    if (isPullingRef.current) {
-        const pullDistance = Math.max(0, info.offset.y - pullStartOffsetYRef.current);
-        if (pullDistance > pullThreshold) {
-            setControlCenterOpen(true);
-        }
+    // Check if the accumulated pull distance is enough to trigger.
+    if (pullDistanceRef.current > pullThreshold) {
+      setControlCenterOpen(true);
     }
 
-    // Always reset state and hide indicator when the gesture ends.
-    isPullingRef.current = false;
-    pullStartOffsetYRef.current = 0;
+    // Always reset pull distance and hide indicator on gesture end.
+    pullDistanceRef.current = 0;
     pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
   };
 
@@ -101,6 +96,8 @@ const Desktop: React.FC = () => {
             ref={scrollContainerRef}
             onPan={handlePan}
             onPanEnd={handlePanEnd}
+            // Give direct control over vertical panning to our handlers to prevent conflicts.
+            style={{ touchAction: 'pan-y' }}
             className="h-full w-full bg-gradient-to-br from-rose-100/80 via-purple-100/80 to-indigo-100/80 dark:from-gray-900/80 dark:via-purple-900/40 dark:to-indigo-900/80 overflow-y-auto p-4 sm:p-6 overscroll-behavior-y-contain relative"
         >
             <motion.div 

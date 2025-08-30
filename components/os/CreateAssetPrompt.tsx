@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { useOS } from '../../contexts/OSContext.tsx';
-import { ModalType } from '../../types.ts';
-import Modal from '../shared/Modal.tsx';
-import Input from '../shared/Input.tsx';
-import Button from '../shared/Button.tsx';
+import { useOS } from '../../contexts/OSContext';
+import { ModalType } from '../../types';
+import Modal from '../shared/Modal';
+import Input from '../shared/Input';
+import Button from '../shared/Button';
 
 const CreateAssetPrompt: React.FC = () => {
     const { osState, createAsset, setActiveModal } = useOS();

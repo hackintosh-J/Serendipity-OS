@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
-import { OSProvider, useOS } from './contexts/OSContext.tsx';
-import SystemBar from './components/os/SystemBar.tsx';
-import Desktop from './components/os/Desktop.tsx';
-import Dock from './components/os/Dock.tsx';
-import WindowManager from './components/os/WindowManager.tsx';
-import AIPanel from './components/os/AICompanion.tsx';
+import { OSProvider, useOS } from './contexts/OSContext';
+import SystemBar from './components/os/SystemBar';
+import Desktop from './components/os/Desktop';
+import Dock from './components/os/Dock';
+import WindowManager from './components/os/WindowManager';
+import AIPanel from './components/os/AICompanion';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SerendipityOS: React.FC = () => {

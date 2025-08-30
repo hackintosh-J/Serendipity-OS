@@ -1,6 +1,7 @@
-import { OSState, ModalType, AgentDefinition, AIPanelState } from './types.ts';
-import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent } from './components/agents/index.ts';
-import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon } from './assets/icons.tsx';
+
+import { OSState, ModalType, AgentDefinition, AIPanelState } from './types';
+import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent } from './components/agents/index';
+import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon } from './assets/icons';
 import React from 'react';
 
 const memoAgent: AgentDefinition = {

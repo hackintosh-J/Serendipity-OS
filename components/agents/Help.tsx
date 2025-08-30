@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { AgentComponentProps } from '../../types.ts';
+import { AgentComponentProps } from '../../types';
 
 const HelpAgent: React.FC<AgentComponentProps> = () => {
   const content = `# 欢迎来到 Serendipity OS！

@@ -1,10 +1,11 @@
+
 import React from 'react';
-import { useOS } from '../../contexts/OSContext.tsx';
-import { SparklesIcon, SettingsIcon, PlusIcon } from '../../assets/icons.tsx';
-import { ModalType } from '../../types.ts';
-import Settings from './Settings.tsx';
-import AgentLibrary from './AgentLibrary.tsx';
-import CreateAssetPrompt from './CreateAssetPrompt.tsx';
+import { useOS } from '../../contexts/OSContext';
+import { SparklesIcon, SettingsIcon, PlusIcon } from '../../assets/icons';
+import { ModalType } from '../../types';
+import Settings from './Settings';
+import AgentLibrary from './AgentLibrary';
+import CreateAssetPrompt from './CreateAssetPrompt';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DockButton: React.FC<{ onClick: () => void; children: React.ReactNode; 'aria-label': string; }> = ({ onClick, children, 'aria-label': ariaLabel }) => (

@@ -1,11 +1,12 @@
+
 import React, { useState, useRef, ChangeEvent } from 'react';
-import { useOS } from '../../contexts/OSContext.tsx';
-import { ModalType, OSState } from '../../types.ts';
-import Modal from '../shared/Modal.tsx';
-import { SettingsIcon, UploadIcon, DownloadIcon } from '../../assets/icons.tsx';
-import { astService } from '../../services/astService.ts';
-import Button from '../shared/Button.tsx';
-import Input from '../shared/Input.tsx';
+import { useOS } from '../../contexts/OSContext';
+import { ModalType, OSState } from '../../types';
+import Modal from '../shared/Modal';
+import { SettingsIcon, UploadIcon, DownloadIcon } from '../../assets/icons';
+import { astService } from '../../services/astService';
+import Button from '../shared/Button';
+import Input from '../shared/Input';
 
 const Settings: React.FC = () => {
   const { osState, dispatch, setActiveModal } = useOS();

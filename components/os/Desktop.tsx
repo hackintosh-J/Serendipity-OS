@@ -1,6 +1,7 @@
+
 import React from 'react';
-import { useOS } from '../../contexts/OSContext.tsx';
-import AgentBubble from './AgentBubble.tsx';
+import { useOS } from '../../contexts/OSContext';
+import AgentBubble from './AgentBubble';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Desktop: React.FC = () => {

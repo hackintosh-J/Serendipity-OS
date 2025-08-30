@@ -1,8 +1,8 @@
 
 
 import React from 'react';
-import { AgentComponentProps } from '../../types.ts';
-import { CloudIcon, SparklesIcon } from '../../assets/icons.tsx';
+import { AgentComponentProps } from '../../types';
+import { CloudIcon, SparklesIcon } from '../../assets/icons';
 
 const WeatherAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => {
     const { location, data, lastUpdated } = instance.state;

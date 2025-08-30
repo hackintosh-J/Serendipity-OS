@@ -1,5 +1,6 @@
+
 import React, { ReactNode } from 'react';
-import { XIcon } from '../../assets/icons.tsx';
+import { XIcon } from '../../assets/icons';
 import { motion } from 'framer-motion';
 
 interface ModalProps {

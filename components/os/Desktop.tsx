@@ -33,20 +33,23 @@ const Desktop: React.FC = () => {
     
   const handlePan = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer || scrollContainer.scrollTop !== 0 || info.offset.y < 0) {
-      // Hide indicator if conditions aren't met
+    // The key change is to check scrollTop dynamically on each pan event.
+    // We only activate the pull gesture if we are at the top of the scroll container
+    // and the user is pulling down.
+    if (scrollContainer && scrollContainer.scrollTop === 0 && info.offset.y > 0) {
+      const pullDistance = Math.min(info.offset.y, 150);
+      const progress = pullDistance / 150;
+
+      pullIndicatorControls.start({
+        opacity: progress,
+        scale: 0.8 + progress * 0.2,
+        y: pullDistance / 2,
+      });
+    } else {
+      // If we are not at the top, or if we are pulling up, or if the container doesn't exist,
+      // we make sure the indicator is hidden.
       pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
-      return;
     }
-
-    const pullDistance = Math.min(info.offset.y, 150);
-    const progress = pullDistance / 150;
-
-    pullIndicatorControls.start({
-      opacity: progress,
-      scale: 0.8 + progress * 0.2,
-      y: pullDistance / 2,
-    });
   };
 
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {

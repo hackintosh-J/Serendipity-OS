@@ -18,7 +18,8 @@ const Desktop: React.FC = () => {
   const pullIndicatorControls = useAnimation();
   const { settings } = osState;
   
-  // Use a ref to track the accumulated pull distance during a single gesture.
+  // Refs to manage the gesture state machine
+  const isPullingRef = useRef(false);
   const pullDistanceRef = useRef(0);
 
   const assetPriority = (asset: ActiveAssetInstance) => {
@@ -35,53 +36,65 @@ const Desktop: React.FC = () => {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }), [osState.activeAssets]);
     
-  // This handler now uses the gesture's delta to accumulate pull distance,
-  // which correctly handles the transition from scrolling to over-scrolling.
   const handlePan = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
     const atTop = scrollContainer.scrollTop === 0;
-    const isPanningDown = info.delta.y > 0;
+    // Use velocity to determine the gesture's intent direction.
+    const isIntentionalPullDown = info.velocity.y > 0;
 
-    if (atTop && isPanningDown) {
-      // At the top and pulling down: this is the pull-to-open gesture.
-      // We must prevent the browser's default pull-to-refresh action.
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-      
-      // Accumulate the pull distance from the delta of each frame.
-      pullDistanceRef.current += info.delta.y;
+    // --- Gesture State Machine ---
 
-      // Update the pull indicator's animation based on the accumulated distance.
-      const limitedPullDistance = Math.min(pullDistanceRef.current, 150);
-      const progress = limitedPullDistance / 150;
-
-      pullIndicatorControls.start({
-        opacity: progress,
-        scale: 0.8 + progress * 0.2,
-        y: limitedPullDistance / 2,
-        transition: { duration: 0 }
-      });
-    } else {
-      // If we are not at the top, or if panning up, reset the pull gesture state.
-      if (pullDistanceRef.current > 0) {
-        pullDistanceRef.current = 0;
-        pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
-      }
+    // 1. Check if we should ENTER pull mode.
+    // This happens if we are not already pulling, are at the top, and the user is pulling down.
+    if (!isPullingRef.current && atTop && isIntentionalPullDown) {
+        isPullingRef.current = true;
+        // Reset distance to start counting from this exact moment.
+        pullDistanceRef.current = 0; 
     }
+    
+    // 2. If in pull mode, process the gesture.
+    if (isPullingRef.current) {
+        // Stop the browser from taking over (e.g., pull-to-refresh).
+        // This is crucial for a smooth experience.
+        if (event.cancelable) {
+            event.preventDefault();
+        }
+        
+        // Accumulate the delta. This allows the user to "push back" the indicator.
+        pullDistanceRef.current += info.delta.y;
+
+        // If the user has pushed back up past the starting point, exit pull mode.
+        if (pullDistanceRef.current < 0) {
+            isPullingRef.current = false;
+            pullDistanceRef.current = 0;
+        }
+
+        // Update the visual indicator based on the pull distance.
+        const limitedPullDistance = Math.min(pullDistanceRef.current, 150);
+        const progress = limitedPullDistance > 0 ? limitedPullDistance / 150 : 0;
+        
+        pullIndicatorControls.start({
+            opacity: progress,
+            scale: 0.8 + progress * 0.2,
+            y: limitedPullDistance / 2,
+            transition: { duration: 0 }
+        });
+    }
+    // 3. If not in pull mode, do nothing and let the browser handle scrolling.
   };
 
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const pullThreshold = 50; 
     
-    // Check if the accumulated pull distance is enough to trigger.
-    if (pullDistanceRef.current > pullThreshold) {
+    // If the gesture ended while we were in pull mode and passed the threshold, open the center.
+    if (isPullingRef.current && pullDistanceRef.current > pullThreshold) {
       setControlCenterOpen(true);
     }
 
-    // Always reset pull distance and hide indicator on gesture end.
+    // Always reset state and hide indicator on gesture end.
+    isPullingRef.current = false;
     pullDistanceRef.current = 0;
     pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
   };

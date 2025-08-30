@@ -180,9 +180,15 @@ class GeminiService {
 
   public async generateInsight(osState: any, apiKey: string): Promise<any> {
     const ai = new GoogleGenAI({ apiKey });
+
+    // FIX: Filter out all insight assets from the context sent to the AI.
+    // This prevents the AI from getting confused by seeing its own pending generation
+    // task or creating feedback loops from previous insights.
+    const relevantAssets = Object.values(osState.activeAssets).filter((asset: any) => asset.agentId !== 'agent.system.insight');
+
     const finalSystemInstruction = insightSystemInstruction.replace(
         '{ACTIVE_ASSETS_JSON}',
-        JSON.stringify(Object.values(osState.activeAssets).map((a: any) => ({ name: a.name, agentId: a.agentId, state: a.state })), null, 2)
+        JSON.stringify(relevantAssets.map((a: any) => ({ name: a.name, agentId: a.agentId, state: a.state })), null, 2)
     );
     try {
         const response = await ai.models.generateContent({

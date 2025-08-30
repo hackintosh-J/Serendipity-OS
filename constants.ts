@@ -47,7 +47,8 @@ const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, update
         ),
         generated_image && React.createElement('div', null,
             React.createElement('img', { src: `data:image/jpeg;base64,${generated_image}`, alt: "AI-generated content", className: "w-full rounded-lg shadow-md mb-4" }),
-            React.createElement(Button, { onClick: handleSetWallpaper }, "设置为壁纸")
+            // FIX: Explicitly passed 'children' prop to React.createElement to satisfy the ButtonProps type.
+            React.createElement(Button, { onClick: handleSetWallpaper, children: "设置为壁纸" })
         ),
         state.action === 'SET_WALLPAPER' && React.createElement('p', { className: "text-sm text-green-600 dark:text-green-400 mt-4 font-semibold" }, "壁纸已设置！")
     );

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ActiveAssetInstance } from '../../types';
-import { useOS } from '../../contexts/OSContext';
-import { astService } from '../../services/astService';
-import { CloudIcon, DownloadIcon, ClockIcon, CalculatorIcon, TrashIcon } from '../../assets/icons';
+import { ActiveAssetInstance } from '../types';
+import { useOS } from '../contexts/OSContext';
+import { astService } from '../services/astService';
+import { CloudIcon, DownloadIcon, ClockIcon, CalculatorIcon, TrashIcon } from './icons';
 import { motion } from 'framer-motion';
 
 interface AgentBubbleProps {

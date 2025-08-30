@@ -71,18 +71,15 @@ const GlanceView: React.FC = () => {
       if (!event.isPrimary || !gesture.isGestureActive) return;
 
       const deltaY = event.clientY - gesture.startY;
-
-      if (!gesture.isDragging) {
-        if (Math.abs(deltaY) > 5) {
-          if (deltaY > 0) {
-            gesture.isDragging = true;
-            event.preventDefault();
-            scrollContainer.style.overflowY = 'hidden';
-            scrollContainer.style.touchAction = 'none';
-          } else {
-            handlePointerUp();
-          }
-        }
+      
+      // Only start dragging on a clear downward movement.
+      // If the user moves up, we do nothing and let the default scroll happen.
+      if (!gesture.isDragging && deltaY > 5) {
+          gesture.isDragging = true;
+          // Prevent the browser from scrolling or refreshing.
+          event.preventDefault();
+          scrollContainer.style.overflowY = 'hidden';
+          scrollContainer.style.touchAction = 'none';
       }
 
       if (gesture.isDragging) {
@@ -101,7 +98,7 @@ const GlanceView: React.FC = () => {
       scrollContainer.style.touchAction = 'auto';
 
       if (gesture.isDragging) {
-        const pullThreshold = 100;
+        const pullThreshold = 80; // Reduced for better sensitivity
         if (y.get() > pullThreshold) {
           setControlCenterOpen(true);
         } else {

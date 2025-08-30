@@ -63,10 +63,7 @@ const GlanceView: React.FC = () => {
 
   return (
     <div 
-      onPointerDown={handlePointerDown}
-      onPointerUp={resetTouchAction}
-      onPointerCancel={resetTouchAction}
-      className="h-full w-full bg-gradient-to-br from-indigo-100 via-sky-100 to-teal-100 dark:from-indigo-900/70 dark:via-sky-900/70 dark:to-teal-900/70 relative overflow-hidden cursor-grab"
+      className="h-full w-full bg-gradient-to-br from-indigo-100 via-sky-100 to-teal-100 dark:from-indigo-900/70 dark:via-sky-900/70 dark:to-teal-900/70 relative overflow-hidden"
     >
         <motion.div 
             className="absolute top-0 left-0 right-0 flex justify-center pt-4 z-0 pointer-events-none"
@@ -85,7 +82,10 @@ const GlanceView: React.FC = () => {
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             style={{ y }}
-            className="h-full w-full absolute inset-0"
+            className="h-full w-full absolute inset-0 cursor-grab"
+            onPointerDown={handlePointerDown}
+            onPointerUp={resetTouchAction}
+            onPointerCancel={resetTouchAction}
         >
           <div
             ref={scrollContainerRef}

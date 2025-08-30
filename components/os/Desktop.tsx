@@ -1,14 +1,19 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
-import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { ActiveAssetInstance } from '../../types';
 import { ChevronDownIcon } from '../../assets/icons';
+
+// FIX: Add local `PanInfo` type definition as it's not resolving from the framer-motion import.
+// This defines only the properties that are actually used in this component.
+type PanInfo = {
+  offset: { x: number; y: number; };
+};
 
 const Desktop: React.FC = () => {
   const { osState, setControlCenterOpen } = useOS();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [canPullToOpen, setCanPullToOpen] = useState(false);
   const pullIndicatorControls = useAnimation();
   const { settings } = osState;
 
@@ -26,17 +31,13 @@ const Desktop: React.FC = () => {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }), [osState.activeAssets]);
     
-  const handlePanStart = () => {
-    const scrollContainer = scrollContainerRef.current;
-    if (scrollContainer && scrollContainer.scrollTop === 0) {
-      setCanPullToOpen(true);
-    } else {
-      setCanPullToOpen(false);
-    }
-  };
-
   const handlePan = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (!canPullToOpen || info.offset.y < 0) return;
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer || scrollContainer.scrollTop !== 0 || info.offset.y < 0) {
+      // Hide indicator if conditions aren't met
+      pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
+      return;
+    }
 
     const pullDistance = Math.min(info.offset.y, 150);
     const progress = pullDistance / 150;
@@ -49,13 +50,14 @@ const Desktop: React.FC = () => {
   };
 
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const pullThreshold = 50; // Lowered from 100 to 50 for easier triggering
-    if (canPullToOpen && info.offset.y > pullThreshold) {
+    const pullThreshold = 50; 
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer && scrollContainer.scrollTop === 0 && info.offset.y > pullThreshold) {
       setControlCenterOpen(true);
     }
     pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
-    setCanPullToOpen(false);
   };
+
 
   return (
     <div 
@@ -64,7 +66,6 @@ const Desktop: React.FC = () => {
     >
         <motion.div 
             ref={scrollContainerRef}
-            onPanStart={handlePanStart}
             onPan={handlePan}
             onPanEnd={handlePanEnd}
             className="h-full w-full bg-gradient-to-br from-rose-100/80 via-purple-100/80 to-indigo-100/80 dark:from-gray-900/80 dark:via-purple-900/40 dark:to-indigo-900/80 overflow-y-auto p-4 sm:p-6 overscroll-behavior-y-contain relative"

@@ -7,16 +7,23 @@ import WindowManager from './components/os/WindowManager';
 import AIPanel from './components/os/AICompanion';
 import ControlCenter from './components/os/ControlCenter';
 import GlanceView from './components/os/GlanceView';
-// FIX: Import `Transition` type from framer-motion to resolve type error.
-import { motion, AnimatePresence, PanInfo, Transition } from 'framer-motion';
+// FIX: Removed `PanInfo` and `Transition` from import as they are causing resolution errors.
+import { motion, AnimatePresence } from 'framer-motion';
+
+// A minimal polyfill for PanInfo since it's not being exported correctly in the environment.
+// This provides type information for the properties being used (`offset`, `velocity`).
+type PanInfo = {
+  offset: { x: number, y: number },
+  velocity: { x: number, y: number },
+};
 
 const MainViewport: React.FC = () => {
   const { osState, setCurrentView } = useOS();
   const { ui: { aiPanelState, currentView, isControlCenterOpen } } = osState;
   const isAiPanelOpen = aiPanelState === 'panel';
   
-  // FIX: Explicitly type the transition object to prevent TypeScript from inferring 'type' as a generic `string`.
-  const transition: Transition = { type: 'spring', stiffness: 300, damping: 30 };
+  // FIX: Removed explicit `Transition` type annotation to avoid import error. Type is inferred.
+  const transition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
   const handleDesktopPanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const swipeThreshold = 50;

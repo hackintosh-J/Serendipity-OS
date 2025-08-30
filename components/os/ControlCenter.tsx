@@ -1,21 +1,22 @@
 import React from 'react';
 import { useOS } from '../../contexts/OSContext';
-// FIX: Import Variants type from framer-motion to correctly type the animation variants.
-import { motion, Variants } from 'framer-motion';
+// FIX: Remove `Variants` import as it's causing a type resolution error.
+import { motion } from 'framer-motion';
 import { XIcon, WifiIcon, BluetoothIcon, MoonIcon, SunIcon, SparklesIcon, ClockIcon } from '../../assets/icons';
 import { ModalType } from '../../types';
 
-const containerVariants: Variants = {
+// FIX: Removed `: Variants` type annotation.
+const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
   exit: { opacity: 0 },
 };
 
-// FIX: Add Variants type annotation to resolve type inference error with 'spring' transition type.
-const panelVariants: Variants = {
+// FIX: Removed `: Variants` type annotation.
+const panelVariants = {
   hidden: { y: '-100%', opacity: 0.8 },
-  visible: { y: 0, opacity: 1, transition: { type: 'spring', damping: 25, stiffness: 180 } },
-  exit: { y: '-100%', opacity: 0.8, transition: { type: 'spring', damping: 25, stiffness: 180 } },
+  visible: { y: 0, opacity: 1, transition: { type: 'spring' as const, damping: 25, stiffness: 180 } },
+  exit: { y: '-100%', opacity: 0.8, transition: { type: 'spring' as const, damping: 25, stiffness: 180 } },
 };
 
 const ControlCenter: React.FC = () => {

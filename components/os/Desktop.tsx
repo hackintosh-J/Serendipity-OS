@@ -49,7 +49,7 @@ const Desktop: React.FC = () => {
   };
 
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const pullThreshold = 100;
+    const pullThreshold = 50; // Lowered from 100 to 50 for easier triggering
     if (canPullToOpen && info.offset.y > pullThreshold) {
       setControlCenterOpen(true);
     }

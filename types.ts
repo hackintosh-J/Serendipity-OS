@@ -17,7 +17,7 @@ export interface AgentDefinition {
   name: string;
   description: string;
   icon: React.FC<{ className?: string }>;
-  component: React.FC<{ instance: ActiveAssetInstance; updateState: (newState: any) => void; close: () => void; }>;
+  component: React.FC<AgentComponentProps>;
   defaultState: any;
   size?: 'small' | 'full';
 }
@@ -35,6 +35,7 @@ export enum ModalType {
     SETTINGS = 'SETTINGS',
     AGENT_LIBRARY = 'AGENT_LIBRARY',
     CREATE_ASSET_PROMPT = 'CREATE_ASSET_PROMPT',
+    INSIGHT_HISTORY = 'INSIGHT_HISTORY',
 }
 
 export type AIPanelState = 'closed' | 'input' | 'panel';
@@ -56,6 +57,7 @@ export interface OSState {
   settings: SystemSettings;
   installedAgents: { [key: string]: AgentDefinition };
   activeAssets: { [key: string]: ActiveAssetInstance };
+  insightHistory: ActiveAssetInstance[];
   ui: UIState;
 }
 
@@ -75,11 +77,15 @@ export type OSAction =
   | { type: 'PROMPT_CREATE_ASSET'; payload: { agentId: string; agentName:string; } }
   | { type: 'IMPORT_STATE'; payload: Partial<OSState> }
   | { type: 'TOGGLE_CONTROL_CENTER'; payload: boolean }
-  | { type: 'SET_CURRENT_VIEW'; payload: 'desktop' | 'glance' };
+  | { type: 'SET_CURRENT_VIEW'; payload: 'desktop' | 'glance' }
+  | { type: 'ARCHIVE_INSIGHT'; payload: { assetId: string } }
+  | { type: 'DELETE_ARCHIVED_INSIGHT'; payload: { assetId: string } }
+  | { type: 'RESTORE_ARCHIVED_INSIGHT'; payload: { assetId: string } };
 
 // Props for Agent components
 export interface AgentComponentProps {
     instance: ActiveAssetInstance;
     updateState: (newState: any) => void;
     close: () => void;
+    dispatch: React.Dispatch<OSAction>;
 }

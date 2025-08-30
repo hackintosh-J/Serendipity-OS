@@ -2,7 +2,8 @@ import React from 'react';
 import { useOS } from '../../contexts/OSContext';
 // FIX: Import Variants type from framer-motion to correctly type the animation variants.
 import { motion, Variants } from 'framer-motion';
-import { XIcon, WifiIcon, BluetoothIcon, MoonIcon, SunIcon } from '../../assets/icons';
+import { XIcon, WifiIcon, BluetoothIcon, MoonIcon, SunIcon, SparklesIcon, ClockIcon } from '../../assets/icons';
+import { ModalType } from '../../types';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -18,7 +19,7 @@ const panelVariants: Variants = {
 };
 
 const ControlCenter: React.FC = () => {
-  const { osState, setControlCenterOpen, toggleTheme } = useOS();
+  const { osState, setControlCenterOpen, toggleTheme, triggerInsightGeneration, setActiveModal } = useOS();
   const isDarkMode = osState.settings.theme === 'dark';
 
   const ControlButton: React.FC<{ icon: React.FC<{className?: string}>; label: string; active?: boolean; onClick?: () => void; }> = ({ icon: Icon, label, active, onClick }) => (
@@ -29,6 +30,16 @@ const ControlCenter: React.FC = () => {
         <span className="text-xs text-gray-700 dark:text-gray-300">{label}</span>
     </div>
   );
+  
+  const handleGetInsight = () => {
+    triggerInsightGeneration();
+    setControlCenterOpen(false);
+  }
+
+  const handleShowHistory = () => {
+    setActiveModal(ModalType.INSIGHT_HISTORY);
+    setControlCenterOpen(false);
+  }
 
   return (
     <motion.div
@@ -48,10 +59,11 @@ const ControlCenter: React.FC = () => {
         onClick={e => e.stopPropagation()}
       >
         <div className="grid grid-cols-4 gap-4 mb-6">
-            <ControlButton icon={WifiIcon} label="Wi-Fi" active />
-            <ControlButton icon={BluetoothIcon} label="蓝牙" active />
-            <ControlButton icon={MoonIcon} label="勿扰" />
+            <ControlButton icon={SparklesIcon} label="获取新洞察" onClick={handleGetInsight} />
+            <ControlButton icon={ClockIcon} label="历史洞察" onClick={handleShowHistory} />
             <ControlButton icon={isDarkMode ? SunIcon : MoonIcon} label={isDarkMode ? '浅色' : '深色'} active={isDarkMode} onClick={toggleTheme} />
+            <ControlButton icon={WifiIcon} label="Wi-Fi" active />
+
         </div>
 
         <div>

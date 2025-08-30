@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActiveAssetInstance, AgentDefinition } from '../../types';
+import { ActiveAssetInstance, AgentDefinition, OSAction } from '../../types';
 import { XIcon } from '../../assets/icons';
 import { motion } from 'framer-motion';
 
@@ -8,6 +8,7 @@ interface AssetViewerProps {
   agent: AgentDefinition;
   updateState: (newState: any) => void;
   close: () => void;
+  dispatch: React.Dispatch<OSAction>;
 }
 
 const viewerVariants = {
@@ -17,7 +18,7 @@ const viewerVariants = {
 };
 
 
-const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, close }) => {
+const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, close, dispatch }) => {
   const AgentComponent = agent.component;
 
   return (
@@ -49,7 +50,7 @@ const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, cl
         </button>
       </header>
       <div className="flex-grow p-4 overflow-y-auto overscroll-behavior-y-contain">
-        <AgentComponent instance={asset} updateState={updateState} close={close} />
+        <AgentComponent instance={asset} updateState={updateState} close={close} dispatch={dispatch} />
       </div>
     </motion.div>
   );

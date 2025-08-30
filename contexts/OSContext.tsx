@@ -117,12 +117,51 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
 
     case 'SET_CURRENT_VIEW':
         return { ...state, ui: { ...state.ui, currentView: action.payload }};
+        
+    case 'ARCHIVE_INSIGHT': {
+      const { assetId } = action.payload;
+      const asset = state.activeAssets[assetId];
+      if (!asset) return state;
+
+      const newActiveAssets = { ...state.activeAssets };
+      delete newActiveAssets[assetId];
+
+      const newInsightHistory = [...state.insightHistory, asset];
+      
+      return {
+        ...state,
+        activeAssets: newActiveAssets,
+        insightHistory: newInsightHistory,
+      };
+    }
+
+    case 'DELETE_ARCHIVED_INSIGHT': {
+        const { assetId } = action.payload;
+        return {
+            ...state,
+            insightHistory: state.insightHistory.filter(asset => asset.id !== assetId),
+        };
+    }
+
+    case 'RESTORE_ARCHIVED_INSIGHT': {
+        const { assetId } = action.payload;
+        const asset = state.insightHistory.find(a => a.id === assetId);
+        if (!asset) return state;
+        
+        return {
+            ...state,
+            activeAssets: { ...state.activeAssets, [assetId]: asset },
+            insightHistory: state.insightHistory.filter(a => a.id !== assetId),
+        };
+    }
+
 
     case 'IMPORT_STATE': {
         const importedState = action.payload;
         // Merge assets and settings
         const newActiveAssets = { ...state.activeAssets, ...importedState.activeAssets };
         const newSettings = { ...state.settings, ...importedState.settings };
+        const newInsightHistory = [...state.insightHistory, ...(importedState.insightHistory || [])];
         
         // Re-hydrate imported agent definitions to ensure they have their functions.
         const newInstalledAgents = { ...state.installedAgents };
@@ -131,14 +170,8 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
                 const existingAgent = state.installedAgents[agentId];
                 const importedAgent = importedState.installedAgents![agentId];
                 if (existingAgent) {
-                    // If agent already exists, merge definitions but keep the live component/icon
-                    newInstalledAgents[agentId] = {
-                        ...existingAgent, // Provides component, icon
-                        ...importedAgent, // Provides imported name, description etc.
-                    };
+                    newInstalledAgents[agentId] = { ...existingAgent, ...importedAgent };
                 } else {
-                    // If it's a new agent from an import, it won't have component/icon.
-                    // The app will crash if we try to render it. Log a warning.
                     console.warn(`Imported an agent definition for "${importedAgent.name}" (${agentId}) which is not supported by this version of the OS. It may not function correctly.`);
                     newInstalledAgents[agentId] = importedAgent;
                 }
@@ -150,6 +183,7 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
             settings: newSettings,
             installedAgents: newInstalledAgents,
             activeAssets: newActiveAssets,
+            insightHistory: newInsightHistory,
         };
     }
 
@@ -172,6 +206,9 @@ interface IOSContext {
   setControlCenterOpen: (isOpen: boolean) => void;
   setCurrentView: (view: 'desktop' | 'glance') => void;
   toggleTheme: () => void;
+  triggerInsightGeneration: () => Promise<void>;
+  deleteArchivedInsight: (assetId: string) => void;
+  restoreArchivedInsight: (assetId: string) => void;
 }
 
 const OSContext = createContext<IOSContext | undefined>(undefined);
@@ -190,6 +227,7 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           ...INITIAL_OS_STATE,
           settings: { ...INITIAL_OS_STATE.settings, ...(savedState.settings || {}) },
           activeAssets: savedState.activeAssets || {},
+          insightHistory: savedState.insightHistory || [],
           installedAgents: INITIAL_OS_STATE.installedAgents,
           ui: { ...INITIAL_OS_STATE.ui }, // UI state is never persisted
         };
@@ -210,6 +248,7 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const stateToSave = {
           settings: osState.settings,
           activeAssets: osState.activeAssets,
+          insightHistory: osState.insightHistory,
         };
         localStorage.setItem(OS_STATE_LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
       } catch (error) {
@@ -218,31 +257,64 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [osState]);
   
-  // Effect for proactive AI insights
-  useEffect(() => {
-    if (!osState.isInitialized) return;
+  const generateAndCreateInsight = useCallback(async () => {
+    const { settings } = osState;
+    if (!settings.geminiApiKey) {
+        console.log("Cannot generate insight without Gemini API key.");
+        return;
+    }
 
-    const insightInterval = setInterval(async () => {
-        const { settings, activeAssets } = osState;
-        if (settings.geminiApiKey && !Object.values(activeAssets).some(a => a.agentId === 'agent.system.insight')) {
-            console.log("Generating a new AI insight...");
-            const insight = await geminiService.generateInsight(osState, settings.geminiApiKey);
-
-            if (insight && insight.type !== 'error') {
-                dispatch({ 
-                    type: 'CREATE_ASSET', 
-                    payload: {
-                        agentId: 'agent.system.insight',
-                        name: insight.title || '来自AI的灵感',
-                        initialState: { ...insight, apiKey: settings.geminiApiKey },
-                    }
-                });
-            }
+    // Prevents multiple generations at once. A proper implementation would use a loading state.
+    if (Object.values(osState.activeAssets).some(a => a.name === '正在生成...')) {
+        return;
+    }
+    
+    const loadingAssetId = `loading-${crypto.randomUUID()}`;
+    // Create a temporary placeholder
+    dispatch({
+        type: 'CREATE_ASSET',
+        payload: {
+            agentId: 'agent.system.insight',
+            name: '正在生成...',
+            initialState: { content: 'AI正在为您准备惊喜...' }
         }
-    }, 2 * 60 * 1000); // Every 2 minutes
+    });
 
-    return () => clearInterval(insightInterval);
-  }, [osState.isInitialized, osState.settings.geminiApiKey, osState.activeAssets, osState]);
+    const insight = await geminiService.generateInsight(osState, settings.geminiApiKey);
+    
+    // Find and delete the placeholder. A more robust solution might update it.
+    const loadingAsset = Object.values(osState.activeAssets).find(a => a.name === '正在生成...');
+    if (loadingAsset) {
+        dispatch({ type: 'DELETE_ASSET', payload: { assetId: loadingAsset.id }});
+    }
+
+    if (insight && insight.type !== 'error') {
+        let generated_image = null;
+        if (insight.image_prompt) {
+            generated_image = await geminiService.generateImage(insight.image_prompt, settings.geminiApiKey);
+        }
+
+        dispatch({ 
+            type: 'CREATE_ASSET', 
+            payload: {
+                agentId: 'agent.system.insight',
+                name: insight.title || '来自AI的灵感',
+                initialState: { ...insight, generated_image },
+            }
+        });
+    }
+  }, [osState, dispatch]);
+
+  useEffect(() => {
+    if (osState.isInitialized) {
+        const hasInsights = Object.values(osState.activeAssets).some(a => a.agentId === 'agent.system.insight');
+        const hasArchivedInsights = osState.insightHistory.length > 0;
+        if (!hasInsights && !hasArchivedInsights) {
+            console.log("Generating initial AI insight on first load...");
+            generateAndCreateInsight();
+        }
+    }
+  }, [osState.isInitialized, osState.insightHistory.length, osState.activeAssets, generateAndCreateInsight]);
 
   // Effect to watch for agent-initiated system actions
   useEffect(() => {
@@ -268,6 +340,14 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   const deleteAsset = useCallback((assetId: string) => {
     dispatch({ type: 'DELETE_ASSET', payload: { assetId } });
+  }, []);
+  
+  const deleteArchivedInsight = useCallback((assetId: string) => {
+    dispatch({ type: 'DELETE_ARCHIVED_INSIGHT', payload: { assetId } });
+  }, []);
+
+  const restoreArchivedInsight = useCallback((assetId: string) => {
+    dispatch({ type: 'RESTORE_ARCHIVED_INSIGHT', payload: { assetId } });
   }, []);
 
   const viewAsset = useCallback((assetId: string) => {
@@ -300,7 +380,7 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, [osState.settings.theme]);
 
   return (
-    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleTheme }}>
+    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleTheme, triggerInsightGeneration: generateAndCreateInsight, deleteArchivedInsight, restoreArchivedInsight }}>
       {children}
     </OSContext.Provider>
   );

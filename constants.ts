@@ -1,31 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { OSState, ModalType, AgentDefinition, AIPanelState, AgentComponentProps } from './types';
 import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent } from './components/agents/index';
-import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon } from './assets/icons';
+import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon, DownloadIcon } from './assets/icons';
 import Button from './components/shared/Button';
-import { geminiService } from './services/geminiService';
-
 
 // --- AI Insight Agent Component ---
 // Defined here to avoid creating new files, respecting the project constraints.
-const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, updateState }) => {
+const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, updateState, close, dispatch }) => {
     const { state } = instance;
-    const { type, content, image_prompt, apiKey, generated_image, isLoading } = state;
-    
-    useEffect(() => {
-        const generate = async () => {
-            if (image_prompt && !generated_image && !isLoading && apiKey) {
-                updateState({ ...state, isLoading: true });
-                const imageB64 = await geminiService.generateImage(image_prompt, apiKey);
-                if (imageB64) {
-                    updateState({ ...state, isLoading: false, generated_image: imageB64 });
-                } else {
-                    updateState({ ...state, isLoading: false, content: state.content + "\n\n(图片生成失败)" });
-                }
-            }
-        };
-        generate();
-    }, [image_prompt, generated_image, isLoading, apiKey, state, updateState]);
+    const { content, generated_image } = state;
 
     const handleSetWallpaper = () => {
         if(generated_image) {
@@ -35,20 +18,21 @@ const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, update
         }
     };
     
+    const handleArchive = () => {
+        dispatch({ type: 'ARCHIVE_INSIGHT', payload: { assetId: instance.id } });
+        close();
+    };
+
     // FIX: Replaced JSX with React.createElement to compile in a .ts file.
-    // The errors were caused by using JSX syntax in a file with a .ts extension,
-    // which is not processed as a TSX file.
     return React.createElement('div', { className: "p-4 bg-white dark:bg-gray-800 rounded-lg -m-4" },
         React.createElement('h2', { className: "text-xl font-bold text-gray-900 dark:text-gray-100 mb-4" }, instance.name),
         React.createElement('p', { className: "text-gray-700 dark:text-gray-300 leading-relaxed mb-6 whitespace-pre-wrap" }, content),
-        isLoading && React.createElement('div', { className: "w-full h-64 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg" },
-            React.createElement(SparklesIcon, { className: "w-8 h-8 text-purple-500 animate-pulse" }),
-            React.createElement('p', { className: "mt-2 text-sm text-gray-500 dark:text-gray-400" }, "AI正在为您生成图片...")
-        ),
-        generated_image && React.createElement('div', null,
-            React.createElement('img', { src: `data:image/jpeg;base64,${generated_image}`, alt: "AI-generated content", className: "w-full rounded-lg shadow-md mb-4" }),
-            // FIX: Explicitly passed 'children' prop to React.createElement to satisfy the ButtonProps type.
-            React.createElement(Button, { onClick: handleSetWallpaper, children: "设置为壁纸" })
+        generated_image && React.createElement('div', { className: "space-y-4" },
+            React.createElement('img', { src: `data:image/jpeg;base64,${generated_image}`, alt: "AI-generated content", className: "w-full rounded-lg shadow-md" }),
+            React.createElement('div', { className: 'flex space-x-4' },
+                React.createElement(Button, { onClick: handleSetWallpaper, children: "设置为壁纸" }),
+                React.createElement(Button, { onClick: handleArchive, variant: 'secondary', icon: DownloadIcon, children: "存档" })
+            )
         ),
         state.action === 'SET_WALLPAPER' && React.createElement('p', { className: "text-sm text-green-600 dark:text-green-400 mt-4 font-semibold" }, "壁纸已设置！")
     );
@@ -141,7 +125,7 @@ const insightAgent: AgentDefinition = {
     description: '由AI主动生成的惊喜和建议。',
     icon: StarIcon,
     component: InsightAgentComponent,
-    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, isLoading: false, generated_image: null },
+    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, generated_image: null },
     size: 'full',
 };
 
@@ -244,6 +228,7 @@ export const INITIAL_OS_STATE: OSState = {
         updatedAt: new Date().toISOString(),
     }
   },
+  insightHistory: [],
   ui: {
     activeModal: ModalType.NONE,
     viewingAssetId: null,

@@ -5,10 +5,10 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { ActiveAssetInstance } from '../../types';
 import { ChevronDownIcon } from '../../assets/icons';
 
-// FIX: Add local `PanInfo` type definition as it's not resolving from the framer-motion import.
-// This defines only the properties that are actually used in this component.
+// FIX: Add `velocity` to PanInfo type to enable more robust gesture detection.
 type PanInfo = {
   offset: { x: number; y: number; };
+  velocity: { x: number; y: number; };
 };
 
 const Desktop: React.FC = () => {
@@ -16,6 +16,10 @@ const Desktop: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pullIndicatorControls = useAnimation();
   const { settings } = osState;
+  
+  // Refs to manage pull-to-open state within gestures without causing re-renders.
+  const isPullingRef = useRef(false);
+  const pullStartOffsetYRef = useRef(0);
 
   const assetPriority = (asset: ActiveAssetInstance) => {
     if (asset.agentId === 'agent.system.insight') return -1; // Insights always on top
@@ -33,31 +37,57 @@ const Desktop: React.FC = () => {
     
   const handlePan = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const scrollContainer = scrollContainerRef.current;
-    // The key change is to check scrollTop dynamically on each pan event.
-    // We only activate the pull gesture if we are at the top of the scroll container
-    // and the user is pulling down.
-    if (scrollContainer && scrollContainer.scrollTop === 0 && info.offset.y > 0) {
-      const pullDistance = Math.min(info.offset.y, 150);
-      const progress = pullDistance / 150;
+    if (!scrollContainer) return;
 
-      pullIndicatorControls.start({
-        opacity: progress,
-        scale: 0.8 + progress * 0.2,
-        y: pullDistance / 2,
-      });
-    } else {
-      // If we are not at the top, or if we are pulling up, or if the container doesn't exist,
-      // we make sure the indicator is hidden.
-      pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
+    const atTop = scrollContainer.scrollTop === 0;
+    // Use velocity to detect downward motion, which is more reliable than offset.
+    const isPanningDown = info.velocity.y > 0;
+
+    // Condition to START a pull gesture: at the top, moving down, and not already pulling.
+    if (atTop && isPanningDown && !isPullingRef.current) {
+      isPullingRef.current = true;
+      // Record the offset at the exact moment the pull begins.
+      pullStartOffsetYRef.current = info.offset.y;
+    }
+
+    if (isPullingRef.current) {
+      // If the user starts scrolling the content again, cancel the pull gesture.
+      if (scrollContainer.scrollTop > 0) {
+        isPullingRef.current = false;
+        pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
+        return;
+      }
+      
+      // Calculate pull distance relative to where the pull started.
+      const pullDistance = Math.max(0, info.offset.y - pullStartOffsetYRef.current);
+
+      if (pullDistance > 0) {
+        const limitedPullDistance = Math.min(pullDistance, 150);
+        const progress = limitedPullDistance / 150;
+
+        pullIndicatorControls.start({
+          opacity: progress,
+          scale: 0.8 + progress * 0.2,
+          y: limitedPullDistance / 2,
+          transition: { duration: 0 } // Update instantly with finger movement
+        });
+      }
     }
   };
 
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const pullThreshold = 50; 
-    const scrollContainer = scrollContainerRef.current;
-    if (scrollContainer && scrollContainer.scrollTop === 0 && info.offset.y > pullThreshold) {
-      setControlCenterOpen(true);
+    
+    if (isPullingRef.current) {
+        const pullDistance = Math.max(0, info.offset.y - pullStartOffsetYRef.current);
+        if (pullDistance > pullThreshold) {
+            setControlCenterOpen(true);
+        }
     }
+
+    // Always reset state and hide indicator when the gesture ends.
+    isPullingRef.current = false;
+    pullStartOffsetYRef.current = 0;
     pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
   };
 

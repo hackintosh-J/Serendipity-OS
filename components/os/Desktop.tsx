@@ -16,8 +16,8 @@ const Desktop: React.FC = () => {
     if (v < 0) return 0;
     return Math.pow(v, 0.85); // Apply resistance
   });
-  const indicatorOpacity = useTransform(y, [0, 80], [0, 1]);
-  const indicatorScale = useTransform(y, [0, 80], [0.8, 1]);
+  const indicatorOpacity = useTransform(y, [0, 60], [0, 1]);
+  const indicatorScale = useTransform(y, [0, 60], [0.8, 1]);
 
   useEffect(() => {
     if (!isControlCenterOpen) {
@@ -29,15 +29,27 @@ const Desktop: React.FC = () => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    const gesture = {
-      isDragging: false,
-      isGestureActive: false,
-      startY: 0,
+    let isTouchingAtTop = false;
+
+    const handlePositionCheck = () => {
+        if (!isTouchingAtTop || !scrollContainer) return;
+
+        const grid = scrollContainer.firstElementChild as HTMLElement | null;
+        const firstCard = grid?.firstElementChild as HTMLElement | null;
+        if (!firstCard) return;
+
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const firstCardRect = firstCard.getBoundingClientRect();
+        
+        const pullDistance = firstCardRect.top - containerRect.top;
+        
+        // Update visual feedback based on native overscroll
+        y.set(pullDistance > 0 ? pullDistance : 0);
     };
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!event.isPrimary || gesture.isGestureActive) return;
-      
+      if (!event.isPrimary || isTouchingAtTop) return;
+
       const grid = scrollContainer.firstElementChild as HTMLElement | null;
       const firstCard = grid?.firstElementChild as HTMLElement | null;
 
@@ -45,81 +57,44 @@ const Desktop: React.FC = () => {
       if (firstCard) {
         const containerRect = scrollContainer.getBoundingClientRect();
         const firstCardRect = firstCard.getBoundingClientRect();
-        // A generous tolerance is added to the 'isAtTop' check. This makes the pull-down
-        // gesture much more reliable on mobile devices, especially on iOS, where scroll
-        // bouncing ("rubber band" effect) can cause the content to be a few pixels
-        // off from the absolute top when the user initiates a pull gesture.
         const tolerance = 15;
         if (firstCardRect.top >= containerRect.top - tolerance) {
           isAtTop = true;
         }
       } else {
-        // If there are no cards, rely on scrollTop.
         isAtTop = scrollContainer.scrollTop <= 0;
       }
-
-
-      if (isAtTop) {
-        gesture.isGestureActive = true;
-        gesture.isDragging = false;
-        gesture.startY = event.clientY;
-        
-        window.addEventListener('pointermove', handlePointerMove, { passive: false });
-        window.addEventListener('pointerup', handlePointerUp);
-        window.addEventListener('pointercancel', handlePointerUp);
-      }
-    };
-
-    const handlePointerMove = (event: PointerEvent) => {
-      if (!event.isPrimary || !gesture.isGestureActive) return;
-
-      const deltaY = event.clientY - gesture.startY;
-
-      // Only start dragging on a clear downward movement.
-      // If the user moves up, we do nothing and let the default scroll happen.
-      if (!gesture.isDragging && deltaY > 5) {
-        gesture.isDragging = true;
-        // Prevent the browser from scrolling or refreshing.
-        event.preventDefault(); 
-        scrollContainer.style.overflowY = 'hidden';
-        scrollContainer.style.touchAction = 'none';
-      }
-
-      if (gesture.isDragging) {
-        y.set(deltaY);
-      }
-    };
-
-    const handlePointerUp = () => {
-      if (!gesture.isGestureActive) return;
-
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
-
-      scrollContainer.style.overflowY = 'auto';
-      scrollContainer.style.touchAction = 'auto';
-
-      if (gesture.isDragging) {
-        const pullThreshold = 80; // Reduced for better sensitivity
-        if (y.get() > pullThreshold) {
-          setControlCenterOpen(true);
-        } else {
-          animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
-        }
-      }
       
-      gesture.isGestureActive = false;
-      gesture.isDragging = false;
+      if (isAtTop) {
+        isTouchingAtTop = true;
+        window.addEventListener('pointermove', handlePositionCheck);
+      }
     };
+    
+    const handlePointerUp = () => {
+      if (!isTouchingAtTop) return;
+      
+      window.removeEventListener('pointermove', handlePositionCheck);
 
-    scrollContainer.addEventListener('pointerdown', handlePointerDown, { capture: true });
+      const pullThreshold = 60; // Lowered threshold for easier activation
+      if (y.get() > pullThreshold) {
+        setControlCenterOpen(true);
+      } else {
+        // Animate our visual indicator back, browser handles the content snap.
+        animate(y, 0, { type: 'spring', stiffness: 500, damping: 50 });
+      }
+      isTouchingAtTop = false;
+    };
+    
+    scrollContainer.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
-      scrollContainer.removeEventListener('pointerdown', handlePointerDown, { capture: true });
-      window.removeEventListener('pointermove', handlePointerMove);
+      scrollContainer.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('pointermove', handlePositionCheck);
     };
   }, [y, setControlCenterOpen]);
   

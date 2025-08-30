@@ -1,6 +1,6 @@
 import React from 'react';
-import { AgentComponentProps } from '../../types';
-import { SendIcon } from '../../assets/icons';
+import { AgentComponentProps } from '../../types.ts';
+import { SendIcon } from '../../assets/icons.tsx';
 
 const BrowserAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => {
   const { url, inputValue } = instance.state;

@@ -1,6 +1,6 @@
 import React from 'react';
-import { ActiveAssetInstance, AgentDefinition } from '../../types';
-import { XIcon } from '../../assets/icons';
+import { ActiveAssetInstance, AgentDefinition } from '../../types.ts';
+import { XIcon } from '../../assets/icons.tsx';
 import { motion } from 'framer-motion';
 
 interface AssetViewerProps {

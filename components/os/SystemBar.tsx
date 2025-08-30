@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { useOS } from '../../contexts/OSContext';
-import { WifiIcon, BatteryIcon } from '../../assets/icons';
+import { useOS } from '../../contexts/OSContext.tsx';
+import { WifiIcon, BatteryIcon } from '../../assets/icons.tsx';
 
 const SystemBar: React.FC = () => {
   const { osState } = useOS();

@@ -1,8 +1,8 @@
 import React from 'react';
-import { ActiveAssetInstance, AgentDefinition } from '../../types';
-import { useOS } from '../../contexts/OSContext';
-import { astService } from '../../services/astService';
-import { CloudIcon, DownloadIcon } from '../../assets/icons';
+import { ActiveAssetInstance, AgentDefinition } from '../../types.ts';
+import { useOS } from '../../contexts/OSContext.tsx';
+import { astService } from '../../services/astService.ts';
+import { CloudIcon, DownloadIcon } from '../../assets/icons.tsx';
 import { motion } from 'framer-motion';
 
 interface AgentBubbleProps {

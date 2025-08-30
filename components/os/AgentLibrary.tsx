@@ -1,8 +1,8 @@
 import React from 'react';
-import { useOS } from '../../contexts/OSContext';
-import { ModalType } from '../../types';
-import Modal from '../shared/Modal';
-import { PlusIcon } from '../../assets/icons';
+import { useOS } from '../../contexts/OSContext.tsx';
+import { ModalType } from '../../types.ts';
+import Modal from '../shared/Modal.tsx';
+import { PlusIcon } from '../../assets/icons.tsx';
 
 const AgentLibrary: React.FC = () => {
   const { osState, dispatch, setActiveModal } = useOS();

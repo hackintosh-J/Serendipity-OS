@@ -1,7 +1,8 @@
 
+
 import React from 'react';
-import { useOS } from '../../contexts/OSContext';
-import AgentWindow from './AgentWindow';
+import { useOS } from '../../contexts/OSContext.tsx';
+import AgentWindow from './AgentWindow.tsx';
 
 const WindowManager: React.FC = () => {
   const { osState, dispatch, closeAssetView } = useOS();

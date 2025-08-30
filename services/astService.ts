@@ -1,5 +1,5 @@
 
-import { OSState, ActiveAssetInstance } from '../types';
+import { OSState, ActiveAssetInstance } from '../types.ts';
 
 class ASTService {
   private cleanupStateForExport(state: OSState): any {

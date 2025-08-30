@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useOS } from '../../contexts/OSContext';
-import { geminiService } from '../../services/geminiService';
-import { AgentDefinition } from '../../types';
-import { SparklesIcon, ChevronDownIcon, SendIcon } from '../../assets/icons';
+import { useOS } from '../../contexts/OSContext.tsx';
+import { geminiService } from '../../services/geminiService.ts';
+import { AgentDefinition } from '../../types.ts';
+import { SparklesIcon, ChevronDownIcon, SendIcon } from '../../assets/icons.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {

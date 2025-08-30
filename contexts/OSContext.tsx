@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
-import { OSState, OSAction, ActiveAssetInstance, ModalType, AIPanelState } from '../types';
-import { INITIAL_OS_STATE } from '../constants';
+import { OSState, OSAction, ActiveAssetInstance, ModalType, AIPanelState } from '../types.ts';
+import { INITIAL_OS_STATE } from '../constants.ts';
 
 const OS_STATE_LOCAL_STORAGE_KEY = 'serendipity_os_state';
 

@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { AgentComponentProps } from '../../types';
+import { AgentComponentProps } from '../../types.ts';
 
 const MemoAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => {
   const [content, setContent] = useState(instance.state.content || '');

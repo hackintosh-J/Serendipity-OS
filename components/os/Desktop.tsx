@@ -30,9 +30,10 @@ const Desktop: React.FC = () => {
     if (!scrollContainer) return;
 
     let isTouchingAtTop = false;
+    let hasTriggered = false;
 
-    const handlePositionCheck = () => {
-        if (!isTouchingAtTop || !scrollContainer) return;
+    const handlePointerMove = () => {
+        if (!isTouchingAtTop || hasTriggered) return;
 
         const grid = scrollContainer.firstElementChild as HTMLElement | null;
         const firstCard = grid?.firstElementChild as HTMLElement | null;
@@ -43,13 +44,28 @@ const Desktop: React.FC = () => {
         
         const pullDistance = firstCardRect.top - containerRect.top;
         
-        // Update visual feedback based on native overscroll
         y.set(pullDistance > 0 ? pullDistance : 0);
+
+        const pullThreshold = 60;
+        if (pullDistance > pullThreshold) {
+            setControlCenterOpen(true);
+            hasTriggered = true; 
+        }
     };
 
+    const handlePointerUp = () => {
+        window.removeEventListener('pointermove', handlePointerMove);
+        if (isTouchingAtTop && !hasTriggered) {
+            animate(y, 0, { type: 'spring', stiffness: 500, damping: 50 });
+        }
+        isTouchingAtTop = false;
+        hasTriggered = false;
+    };
+    
     const handlePointerDown = (event: PointerEvent) => {
-      if (!event.isPrimary || isTouchingAtTop) return;
-
+      if (!event.isPrimary || isControlCenterOpen) return;
+      
+      hasTriggered = false;
       const grid = scrollContainer.firstElementChild as HTMLElement | null;
       const firstCard = grid?.firstElementChild as HTMLElement | null;
 
@@ -67,36 +83,21 @@ const Desktop: React.FC = () => {
       
       if (isAtTop) {
         isTouchingAtTop = true;
-        window.addEventListener('pointermove', handlePositionCheck);
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp, { once: true });
+        window.addEventListener('pointercancel', handlePointerUp, { once: true });
       }
-    };
-    
-    const handlePointerUp = () => {
-      if (!isTouchingAtTop) return;
-      
-      window.removeEventListener('pointermove', handlePositionCheck);
-
-      const pullThreshold = 60; // Lowered threshold for easier activation
-      if (y.get() > pullThreshold) {
-        setControlCenterOpen(true);
-      } else {
-        // Animate our visual indicator back, browser handles the content snap.
-        animate(y, 0, { type: 'spring', stiffness: 500, damping: 50 });
-      }
-      isTouchingAtTop = false;
     };
     
     scrollContainer.addEventListener('pointerdown', handlePointerDown, { passive: true });
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
       scrollContainer.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
-      window.removeEventListener('pointermove', handlePositionCheck);
     };
-  }, [y, setControlCenterOpen]);
+  }, [y, setControlCenterOpen, isControlCenterOpen]);
   
   const assetPriority = (asset: ActiveAssetInstance) => {
     if (asset.agentId === 'agent.system.insight') return -1;

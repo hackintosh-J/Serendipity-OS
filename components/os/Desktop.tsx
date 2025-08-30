@@ -19,17 +19,17 @@ const Desktop: React.FC = () => {
   const y = useMotionValue(0);
   const dragControls = useDragControls();
 
-  // The dragElastic property provides the resistance, so we don't need a separate transform for the content position.
   const indicatorOpacity = useTransform(y, [0, 80], [0, 1]);
   const indicatorScale = useTransform(y, [0, 80], [0.8, 1]);
 
   useEffect(() => {
+    // This effect ensures that when the control center is closed externally,
+    // the desktop animates back to its original position.
     if (!isControlCenterOpen) {
-        // When the control center is dismissed, animate the desktop back to its resting position.
         animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
     }
   }, [isControlCenterOpen, y]);
-
+  
   const assetPriority = (asset: ActiveAssetInstance) => {
     if (asset.agentId === 'agent.system.insight') return -1; // Insights always on top
     if (asset.agentId === 'agent.system.clock' || asset.agentId === 'agent.system.weather' || asset.agentId === 'agent.system.calculator') return 0;
@@ -44,26 +44,38 @@ const Desktop: React.FC = () => {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }), [osState.activeAssets]);
     
+  const resetTouchAction = () => {
+    const scroller = scrollContainerRef.current;
+    if (scroller) {
+      scroller.style.touchAction = 'auto';
+    }
+  };
+    
   const handlePointerDown = (event: React.PointerEvent) => {
-    // We only want to initiate a drag if the scroll container is at the top.
-    // This is the key to differentiating between scrolling and pulling the whole view.
+    // Only initiate a drag if the scroll container is at the very top.
+    // This is the key to differentiating between scrolling the content and pulling the entire view.
     if (scrollContainerRef.current?.scrollTop === 0) {
-      // Prevent default browser actions like text selection
-      event.preventDefault(); 
+      const scroller = scrollContainerRef.current;
+      if (scroller) {
+        // Temporarily disable the browser's native vertical scrolling/panning
+        // to allow our drag gesture to take over without conflict.
+        scroller.style.touchAction = 'pan-x';
+      }
       dragControls.start(event, { snapToCursor: false });
     }
-    // If not at the top, we do nothing, allowing the browser's native scroll handling to take over.
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const pullThreshold = 100; // The pixel distance to trigger the control center
-    const velocityThreshold = 500; // The velocity to trigger the control center
+    resetTouchAction(); // Always restore native scrolling when the drag ends.
+    
+    const pullThreshold = 100;
+    const velocityThreshold = 500;
     const currentY = y.get();
 
     if (currentY > pullThreshold || info.velocity.y > velocityThreshold) {
       setControlCenterOpen(true);
-      // The y value remains, keeping the desktop pulled down.
-      // The useEffect hook handles snapping back when the CC is closed.
+      // The `y` value remains at its current position, preventing the "snap back".
+      // The useEffect hook will handle snapping back only when the CC is closed.
     } else {
       // If not pulled far enough, spring back to the top.
       animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
@@ -76,12 +88,11 @@ const Desktop: React.FC = () => {
         style={{ backgroundImage: settings.wallpaper ? `url(${settings.wallpaper})` : 'none' }}
     >
       <div 
-        // This outer div is our pointer listener.
-        // It's crucial that it's not the scrollable container itself.
         onPointerDown={handlePointerDown}
-        className="h-full w-full bg-gradient-to-br from-rose-100/80 via-purple-100/80 to-indigo-100/80 dark:from-gray-900/80 dark:via-purple-900/40 dark:to-indigo-900/80 relative overflow-hidden"
+        onPointerUp={resetTouchAction}
+        onPointerCancel={resetTouchAction}
+        className="h-full w-full bg-gradient-to-br from-rose-100/80 via-purple-100/80 to-indigo-100/80 dark:from-gray-900/80 dark:via-purple-900/40 dark:to-indigo-900/80 relative overflow-hidden cursor-grab"
       >
-        {/* The pull-down indicator, its visibility is tied to the gesture */}
         <motion.div 
             className="absolute top-0 left-0 right-0 flex justify-center pt-4 z-0 pointer-events-none"
             style={{ opacity: indicatorOpacity, scale: indicatorScale }}
@@ -91,18 +102,16 @@ const Desktop: React.FC = () => {
             </div>
         </motion.div>
         
-        {/* This is the draggable container that holds the scrollable content */}
         <motion.div
             drag="y"
             dragListener={false}
             dragControls={dragControls}
             onDragEnd={handleDragEnd}
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.5 }} // This creates the resistance effect
-            style={{ y }} // Link the motion value to the div's y-position
+            dragElastic={{ top: 0, bottom: 0.5 }}
+            style={{ y }}
             className="h-full w-full absolute inset-0"
         >
-          {/* This is the main scrollable container */}
           <div
               ref={scrollContainerRef}
               className="h-full w-full overflow-y-auto overscroll-behavior-y-contain"

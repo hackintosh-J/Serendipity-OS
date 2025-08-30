@@ -17,28 +17,39 @@ const GlanceView: React.FC = () => {
   const y = useMotionValue(0);
   const dragControls = useDragControls();
 
-  // The dragElastic property provides the resistance.
   const indicatorOpacity = useTransform(y, [0, 80], [0, 1]);
   const indicatorScale = useTransform(y, [0, 80], [0.8, 1]);
 
   useEffect(() => {
     if (!isControlCenterOpen) {
-        // When the control center is dismissed, animate the view back to its resting position.
         animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
     }
   }, [isControlCenterOpen, y]);
 
   const sortedAssets = Object.values(osState.activeAssets)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    
+  const resetTouchAction = () => {
+    const scroller = scrollContainerRef.current;
+    if (scroller) {
+      scroller.style.touchAction = 'auto';
+    }
+  };
 
   const handlePointerDown = (event: React.PointerEvent) => {
     if (scrollContainerRef.current?.scrollTop === 0) {
-      event.preventDefault();
+      const scroller = scrollContainerRef.current;
+      if (scroller) {
+        // Temporarily disable native vertical scrolling to allow our gesture to take over.
+        scroller.style.touchAction = 'pan-x';
+      }
       dragControls.start(event, { snapToCursor: false });
     }
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    resetTouchAction(); // Always restore native scrolling.
+    
     const pullThreshold = 100;
     const velocityThreshold = 500;
     const currentY = y.get();
@@ -50,11 +61,12 @@ const GlanceView: React.FC = () => {
     }
   };
 
-
   return (
     <div 
       onPointerDown={handlePointerDown}
-      className="h-full w-full bg-gradient-to-br from-indigo-100 via-sky-100 to-teal-100 dark:from-indigo-900/70 dark:via-sky-900/70 dark:to-teal-900/70 relative overflow-hidden"
+      onPointerUp={resetTouchAction}
+      onPointerCancel={resetTouchAction}
+      className="h-full w-full bg-gradient-to-br from-indigo-100 via-sky-100 to-teal-100 dark:from-indigo-900/70 dark:via-sky-900/70 dark:to-teal-900/70 relative overflow-hidden cursor-grab"
     >
         <motion.div 
             className="absolute top-0 left-0 right-0 flex justify-center pt-4 z-0 pointer-events-none"

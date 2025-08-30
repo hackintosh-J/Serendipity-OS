@@ -4,6 +4,7 @@ import { geminiService } from '../../services/geminiService';
 import { AgentDefinition } from '../../types';
 import { SparklesIcon, ChevronDownIcon, SendIcon } from '../../assets/icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleGenAI } from "@google/genai";
 
 interface Message {
   id: string;
@@ -95,6 +96,28 @@ const AIPanel: React.FC = () => {
                   if (assetToDelete) {
                       deleteAsset(assetToDelete.id);
                       responseTexts.push(`好的，我已经删除了“${payload.assetName}”。`);
+                  } else {
+                      responseTexts.push(`抱歉，我没有找到名为“${payload.assetName}”的资产。`);
+                  }
+                  break;
+              }
+              case 'READ_ASSET_STATE': {
+                  const assetToRead = Object.values(osState.activeAssets).find(a => a.name.toLowerCase().includes(payload.assetName.toLowerCase()));
+                  if (assetToRead) {
+                      const context = JSON.stringify(assetToRead.state, null, 2);
+                      const question = payload.question || prompt;
+                      const newPrompt = `基于以下上下文信息，请回答用户的问题。\n\n上下文:\n\`\`\`json\n${context}\n\`\`\`\n\n问题: ${question}`;
+                      
+                      try {
+                          const ai = new GoogleGenAI({ apiKey: apiKey! });
+                          const result = await ai.models.generateContent({
+                              model: 'gemini-2.5-flash',
+                              contents: newPrompt,
+                          });
+                          responseTexts.push(result.text);
+                      } catch (e: any) {
+                          responseTexts.push(`在处理您的请求时出现错误: ${e.message}`);
+                      }
                   } else {
                       responseTexts.push(`抱歉，我没有找到名为“${payload.assetName}”的资产。`);
                   }

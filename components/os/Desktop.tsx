@@ -21,7 +21,7 @@ const Desktop: React.FC = () => {
     }), [osState.activeAssets]);
 
   return (
-    <div className="h-full w-full bg-gradient-to-br from-rose-100 via-purple-100 to-indigo-100 overflow-y-auto p-4 sm:p-6">
+    <div className="h-full w-full bg-gradient-to-br from-rose-100 via-purple-100 to-indigo-100 overflow-y-auto p-4 sm:p-6 overscroll-behavior-y-contain">
       <motion.div 
         layout 
         className="max-w-3xl mx-auto grid grid-cols-2 gap-4 sm:gap-6"

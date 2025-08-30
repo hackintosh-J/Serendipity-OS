@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ActiveAssetInstance } from '../../types';
 import { useOS } from '../../contexts/OSContext';
 import { astService } from '../../services/astService';
-import { CloudIcon, DownloadIcon, ClockIcon, CalculatorIcon } from '../../assets/icons';
+import { CloudIcon, DownloadIcon, ClockIcon, CalculatorIcon, TrashIcon } from '../../assets/icons';
 import { motion } from 'framer-motion';
 
 interface AgentBubbleProps {
@@ -42,7 +42,7 @@ const LiveClockPreview: React.FC = () => {
 };
 
 const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
-  const { osState, viewAsset, dispatch } = useOS();
+  const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
 
   // Simulate weather updates
@@ -62,6 +62,13 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
     e.stopPropagation();
     if (agentDef) {
         astService.exportAsset(asset, agentDef);
+    }
+  }
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`您确定要删除“${asset.name}”吗？此操作无法撤销。`)) {
+        deleteAsset(asset.id);
     }
   }
 
@@ -136,6 +143,13 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
               aria-label={`导出 ${asset.name}`}
             >
               <DownloadIcon className="w-4 h-4" />
+            </button>
+             <button
+              onClick={handleDelete}
+              className="p-2 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+              aria-label={`删除 ${asset.name}`}
+            >
+              <TrashIcon className="w-4 h-4" />
             </button>
         </div>
       </header>

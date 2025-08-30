@@ -131,6 +131,15 @@ export const INITIAL_OS_STATE: OSState = {
         position: { x: 450, y: 200 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+    },
+    'weather-beijing-asset': {
+        id: 'weather-beijing-asset',
+        agentId: 'agent.system.weather',
+        name: '北京天气',
+        state: { location: '北京', data: null, lastUpdated: null },
+        position: { x: 50, y: 250 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     }
   },
   ui: {

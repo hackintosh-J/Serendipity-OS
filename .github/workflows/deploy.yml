@@ -1,5 +1,3 @@
-# .github/workflows/deploy.yml
-
 name: Deploy to GitHub Pages
 
 on:
@@ -18,6 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Build job
   build:
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +25,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # 匹配您本地的Node版本
+          node-version: '20'
           cache: 'npm'
       - name: Install dependencies
         run: npm install
@@ -37,10 +36,12 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # 上传构建产物文件夹
-          path: './dist' # Vite默认的构建输出目录是dist
+          # 只上传构建后的 dist 文件夹
+          path: './dist'
 
+  # Deployment job
   deploy:
+    # 等待 build 任务成功
     needs: build
     environment:
       name: github-pages

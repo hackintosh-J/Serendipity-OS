@@ -43,11 +43,11 @@ const GlanceView: React.FC = () => {
       if (firstCard) {
         const containerRect = scrollContainer.getBoundingClientRect();
         const firstCardRect = firstCard.getBoundingClientRect();
-        // Add a small tolerance to the 'isAtTop' check. This makes the pull-down gesture
-        // more reliable, especially on iOS where scroll bouncing can cause slight
-        // pixel misalignments. A 5px tolerance allows the gesture to trigger even
-        // if the card is a few pixels "inside" the top of the container.
-        const tolerance = 5;
+        // A generous tolerance is added to the 'isAtTop' check. This makes the pull-down
+        // gesture much more reliable on mobile devices, especially on iOS, where scroll
+        // bouncing ("rubber band" effect) can cause the content to be a few pixels
+        // off from the absolute top when the user initiates a pull gesture.
+        const tolerance = 15;
         if (firstCardRect.top >= containerRect.top - tolerance) {
           isAtTop = true;
         }

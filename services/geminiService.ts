@@ -63,6 +63,7 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
 - 'agent.system.calculator': 计算器 (管理自己的状态)
 - 'agent.system.calendar': 日历 (state: { events: { 'YYYY-MM-DD': [{ time: string, text: string }] } })
 - 'agent.system.todo': 待办清单 (state: { todos: [{ id: string, text: string, completed: boolean, date?: 'YYYY-MM-DD' }] })
+- 'agent.system.insight': AI洞察 (由系统自动生成)
 
 用户的当前系统状态中存在以下资产:
 {ACTIVE_ASSETS_JSON}
@@ -124,6 +125,49 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
 \`\`\`
 `;
 
+const insightSystemInstruction = `你是一个名为 Serendipity OS 的AI原生操作系统的“数字缪斯”。
+你的任务是观察用户的活动资产（备忘录、待办事项、日历等），并主动地、出人意料地为他们创造一些美好的、有启发性的或有用的东西。这旨在实现“Serendipity”（意外发现的惊喜）。
+
+你的输出必须是一个JSON对象，描述你创造的“洞察力”。
+在 \`\`\`json 代码块之外，绝对不能有任何文字、注释或解释。
+
+JSON输出格式:
+\`\`\`json
+{
+  "type": "...",
+  "title": "...",
+  "content": "...",
+  "image_prompt": "..."
+}
+\`\`\`
+
+洞察力类型 (type):
+1. 'creative_spark': 基于用户现有的备忘录或待办事项，提供一个创造性的想法或下一步建议。
+   - 'title': 一个引人入胜的标题，例如“一个新想法...”或“关于你的项目...”。
+   - 'content': 你的具体建议或想法。
+   - 'image_prompt': (可选) 一个描述性的文本，用于生成一张与这个想法相关的鼓舞人心的图片。
+2. 'summary_connection': 发现用户不同资产之间的联系，并为他们创建一个有用的摘要。
+   - 'title': 例如“本周重点”或“关于'项目X'的摘要”。
+   - 'content': 总结性的文本。
+   - 'image_prompt': (可选) 一个用于生成相关图片的提示。
+3. 'inspirational_moment': 提供一个与用户活动无关的、通用的鼓舞人心的引言、短诗或想法。
+   - 'title': 例如“片刻宁静”或“今日灵感”。
+   - 'content': 引言或诗歌。
+   - 'image_prompt': 一个用于生成一张美丽、抽象或宁静图片的提示。
+4. 'wallpaper_suggestion': 创造一个美丽的新壁纸。
+   - 'title': 例如“为你设计的壁纸”或“换个风景”。
+   - 'content': 一句简短的描述，说明你为什么创造这个壁纸。
+   - 'image_prompt': (必需) 一个详细的、富有想象力的图片生成提示 (英文为佳，以便生成高质量图片)。例如: "A breathtaking view of a futuristic city with flying vehicles at sunset, beautiful pink and orange clouds, digital art, highly detailed, cinematic lighting."
+
+规则:
+- 保持积极、有益和简洁。
+- 不要重复你以前给出的想法。每次都要有新意。
+- 你的回应必须总是遵循指定的JSON格式。
+
+用户的当前系统状态中存在以下资产:
+{ACTIVE_ASSETS_JSON}
+`;
+
 type StreamEvent =
     | { type: 'thinking'; content: string }
     | { type: 'result'; content: any }
@@ -132,6 +176,52 @@ type StreamEvent =
 class GeminiService {
   public isConfigured(apiKey: string | null | undefined): boolean {
     return !!apiKey;
+  }
+
+  public async generateInsight(osState: any, apiKey: string): Promise<any> {
+    const ai = new GoogleGenAI({ apiKey });
+    const finalSystemInstruction = insightSystemInstruction.replace(
+        '{ACTIVE_ASSETS_JSON}',
+        JSON.stringify(Object.values(osState.activeAssets).map((a: any) => ({ name: a.name, agentId: a.agentId, state: a.state })), null, 2)
+    );
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: "请根据我的资产，为我创造一个“洞察力”。",
+            config: {
+                systemInstruction: finalSystemInstruction,
+                responseMimeType: "application/json",
+            }
+        });
+        const jsonString = response.text;
+        return JSON.parse(jsonString);
+    } catch (error: any) {
+        console.error("Gemini insight generation error:", error);
+        return { type: 'error', content: `AI洞察生成失败: ${error.message}` };
+    }
+  }
+
+  public async generateImage(prompt: string, apiKey: string): Promise<string | null> {
+    try {
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateImages({
+            model: 'imagen-4.0-generate-001',
+            prompt: prompt,
+            config: {
+                numberOfImages: 1,
+                outputMimeType: 'image/jpeg',
+                aspectRatio: '9:16', // Portrait for mobile wallpaper
+            },
+        });
+
+        if (response.generatedImages && response.generatedImages.length > 0) {
+            return response.generatedImages[0].image.imageBytes;
+        }
+        return null;
+    } catch(error) {
+        console.error("Error generating image: ", error);
+        return null;
+    }
   }
 
   public async *generateActionStream(prompt: string, osState: any, apiKey: string | null): AsyncGenerator<StreamEvent, void, undefined> {

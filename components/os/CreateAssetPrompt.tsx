@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { ModalType } from '../../types';
@@ -42,7 +43,7 @@ const CreateAssetPrompt: React.FC = () => {
         >
             <form onSubmit={handleSubmit}>
                 <div className="p-6">
-                    <label htmlFor="assetName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="assetName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         为您的新资产命名:
                     </label>
                     <Input
@@ -54,7 +55,7 @@ const CreateAssetPrompt: React.FC = () => {
                         placeholder={`例如：我的${assetCreationData.agentName}`}
                     />
                 </div>
-                <div className="p-4 bg-gray-50 border-t flex justify-end space-x-3">
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-600 flex justify-end space-x-3">
                     <Button type="button" variant="secondary" onClick={() => setActiveModal(ModalType.NONE)}>
                         取消
                     </Button>

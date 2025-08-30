@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { SparklesIcon, SettingsIcon, PlusIcon } from '../../assets/icons';
@@ -12,7 +13,7 @@ const DockButton: React.FC<{ onClick: () => void; children: React.ReactNode; 'ar
   <motion.button
     onClick={onClick}
     aria-label={ariaLabel}
-    className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/50 backdrop-blur-lg text-gray-800 shadow-md"
+    className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/50 dark:bg-gray-800/50 backdrop-blur-lg text-gray-800 dark:text-gray-100 shadow-md"
     whileHover={{ scale: 1.1, y: -5, transition: { type: 'spring', stiffness: 300 } }}
     whileTap={{ scale: 0.95 }}
   >
@@ -40,7 +41,7 @@ const Dock: React.FC = () => {
             >
               <motion.div 
                 layoutId="ai-input-bar"
-                className="flex items-center justify-center p-2 bg-white/30 backdrop-blur-xl rounded-3xl shadow-lg"
+                className="flex items-center justify-center p-2 bg-white/30 dark:bg-gray-900/30 backdrop-blur-xl rounded-3xl shadow-lg"
               >
                  <div className="flex items-center space-x-4">
                   <DockButton onClick={handleAIToggle} aria-label="打开AI助手">

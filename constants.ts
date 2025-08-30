@@ -1,7 +1,58 @@
-import { OSState, ModalType, AgentDefinition, AIPanelState } from './types';
+import React, { useState, useEffect } from 'react';
+import { OSState, ModalType, AgentDefinition, AIPanelState, AgentComponentProps } from './types';
 import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent } from './components/agents/index';
-import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon } from './assets/icons';
-import React from 'react';
+import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon } from './assets/icons';
+import Button from './components/shared/Button';
+import { geminiService } from './services/geminiService';
+
+
+// --- AI Insight Agent Component ---
+// Defined here to avoid creating new files, respecting the project constraints.
+const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, updateState }) => {
+    const { state } = instance;
+    const { type, content, image_prompt, apiKey, generated_image, isLoading } = state;
+    
+    useEffect(() => {
+        const generate = async () => {
+            if (image_prompt && !generated_image && !isLoading && apiKey) {
+                updateState({ ...state, isLoading: true });
+                const imageB64 = await geminiService.generateImage(image_prompt, apiKey);
+                if (imageB64) {
+                    updateState({ ...state, isLoading: false, generated_image: imageB64 });
+                } else {
+                    updateState({ ...state, isLoading: false, content: state.content + "\n\n(图片生成失败)" });
+                }
+            }
+        };
+        generate();
+    }, [image_prompt, generated_image, isLoading, apiKey, state, updateState]);
+
+    const handleSetWallpaper = () => {
+        if(generated_image) {
+            const wallpaperUrl = `data:image/jpeg;base64,${generated_image}`;
+            // This action is caught by a listener in OSContext
+            updateState({ ...state, action: 'SET_WALLPAPER', wallpaperUrl });
+        }
+    };
+    
+    // FIX: Replaced JSX with React.createElement to compile in a .ts file.
+    // The errors were caused by using JSX syntax in a file with a .ts extension,
+    // which is not processed as a TSX file.
+    return React.createElement('div', { className: "p-4 bg-white dark:bg-gray-800 rounded-lg -m-4" },
+        React.createElement('h2', { className: "text-xl font-bold text-gray-900 dark:text-gray-100 mb-4" }, instance.name),
+        React.createElement('p', { className: "text-gray-700 dark:text-gray-300 leading-relaxed mb-6 whitespace-pre-wrap" }, content),
+        isLoading && React.createElement('div', { className: "w-full h-64 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg" },
+            React.createElement(SparklesIcon, { className: "w-8 h-8 text-purple-500 animate-pulse" }),
+            React.createElement('p', { className: "mt-2 text-sm text-gray-500 dark:text-gray-400" }, "AI正在为您生成图片...")
+        ),
+        generated_image && React.createElement('div', null,
+            React.createElement('img', { src: `data:image/jpeg;base64,${generated_image}`, alt: "AI-generated content", className: "w-full rounded-lg shadow-md mb-4" }),
+            React.createElement(Button, { onClick: handleSetWallpaper }, "设置为壁纸")
+        ),
+        state.action === 'SET_WALLPAPER' && React.createElement('p', { className: "text-sm text-green-600 dark:text-green-400 mt-4 font-semibold" }, "壁纸已设置！")
+    );
+};
+
 
 const memoAgent: AgentDefinition = {
     id: 'agent.system.memo',
@@ -83,6 +134,16 @@ const todoAgent: AgentDefinition = {
     size: 'full',
 };
 
+const insightAgent: AgentDefinition = {
+    id: 'agent.system.insight',
+    name: 'AI洞察',
+    description: '由AI主动生成的惊喜和建议。',
+    icon: StarIcon,
+    component: InsightAgentComponent,
+    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, isLoading: false, generated_image: null },
+    size: 'full',
+};
+
 export const PRE_INSTALLED_AGENTS: { [key: string]: AgentDefinition } = {
     [memoAgent.id]: memoAgent,
     [browserAgent.id]: browserAgent,
@@ -91,7 +152,8 @@ export const PRE_INSTALLED_AGENTS: { [key: string]: AgentDefinition } = {
     [calculatorAgent.id]: calculatorAgent,
     [calendarAgent.id]: calendarAgent,
     [todoAgent.id]: todoAgent,
-    [helpAgent.id]: helpAgent
+    [helpAgent.id]: helpAgent,
+    [insightAgent.id]: insightAgent
 };
 
 const initialWelcomeAssetState = {
@@ -123,6 +185,7 @@ export const INITIAL_OS_STATE: OSState = {
     userName: '探索者',
     theme: 'light',
     geminiApiKey: null,
+    wallpaper: null,
   },
   installedAgents: PRE_INSTALLED_AGENTS,
   activeAssets: {

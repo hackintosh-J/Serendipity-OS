@@ -11,7 +11,7 @@ import GlanceView from './components/os/GlanceView';
 import { motion, AnimatePresence, PanInfo, Transition } from 'framer-motion';
 
 const MainViewport: React.FC = () => {
-  const { osState, setCurrentView, setControlCenterOpen } = useOS();
+  const { osState, setCurrentView } = useOS();
   const { ui: { aiPanelState, currentView, isControlCenterOpen } } = osState;
   const isAiPanelOpen = aiPanelState === 'panel';
   
@@ -29,10 +29,6 @@ const MainViewport: React.FC = () => {
       // Swipe Left to Glance
       if (offset.x < -swipeThreshold && velocity.x < -velocityThreshold) {
         setCurrentView('glance');
-      }
-      // Swipe Right to open Control Center
-      if (offset.x > swipeThreshold && velocity.x > velocityThreshold) {
-        setControlCenterOpen(true);
       }
     }
   };
@@ -98,6 +94,17 @@ const MainViewport: React.FC = () => {
 const SerendipityOS: React.FC = () => {
   const { osState } = useOS();
 
+  useEffect(() => {
+    if (osState.isInitialized) {
+        const root = document.documentElement;
+        if (osState.settings.theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+    }
+  }, [osState.settings.theme, osState.isInitialized]);
+
   if (!osState.isInitialized) {
     return (
       <div className="w-screen h-screen flex items-center justify-center bg-gray-100 text-gray-700 font-sans">
@@ -113,7 +120,7 @@ const SerendipityOS: React.FC = () => {
   }
 
   return (
-    <div className="h-full w-full bg-gray-100 font-sans flex flex-col overflow-hidden">
+    <div className="h-full w-full bg-gray-100 dark:bg-black font-sans flex flex-col overflow-hidden">
       <SystemBar />
       <MainViewport />
       <div className="fixed bottom-0 left-0 right-0 z-40">

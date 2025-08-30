@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import { OSState, OSAction, ActiveAssetInstance, ModalType, AIPanelState } from '../types';
 import { INITIAL_OS_STATE } from '../constants';
+import { geminiService } from '../services/geminiService';
 
 const OS_STATE_LOCAL_STORAGE_KEY = 'serendipity_os_state';
 
@@ -170,6 +171,7 @@ interface IOSContext {
   setAIPanelState: (state: AIPanelState) => void;
   setControlCenterOpen: (isOpen: boolean) => void;
   setCurrentView: (view: 'desktop' | 'glance') => void;
+  toggleTheme: () => void;
 }
 
 const OSContext = createContext<IOSContext | undefined>(undefined);
@@ -215,6 +217,50 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       }
     }
   }, [osState]);
+  
+  // Effect for proactive AI insights
+  useEffect(() => {
+    if (!osState.isInitialized) return;
+
+    const insightInterval = setInterval(async () => {
+        const { settings, activeAssets } = osState;
+        if (settings.geminiApiKey && !Object.values(activeAssets).some(a => a.agentId === 'agent.system.insight')) {
+            console.log("Generating a new AI insight...");
+            const insight = await geminiService.generateInsight(osState, settings.geminiApiKey);
+
+            if (insight && insight.type !== 'error') {
+                dispatch({ 
+                    type: 'CREATE_ASSET', 
+                    payload: {
+                        agentId: 'agent.system.insight',
+                        name: insight.title || '来自AI的灵感',
+                        initialState: { ...insight, apiKey: settings.geminiApiKey },
+                    }
+                });
+            }
+        }
+    }, 2 * 60 * 1000); // Every 2 minutes
+
+    return () => clearInterval(insightInterval);
+  }, [osState.isInitialized, osState.settings.geminiApiKey, osState.activeAssets, osState]);
+
+  // Effect to watch for agent-initiated system actions
+  useEffect(() => {
+    if (!osState.isInitialized) return;
+
+    Object.values(osState.activeAssets).forEach(asset => {
+        if (asset.agentId === 'agent.system.insight' && asset.state.action === 'SET_WALLPAPER') {
+            dispatch({ type: 'UPDATE_SETTINGS', payload: { wallpaper: asset.state.wallpaperUrl } });
+            // Clear the action from the asset state to prevent re-triggering
+            dispatch({ 
+                type: 'UPDATE_ASSET_STATE', 
+                payload: { assetId: asset.id, newState: { ...asset.state, action: null } }
+            });
+        }
+    });
+
+  }, [osState.activeAssets, osState.isInitialized]);
+
 
   const createAsset = useCallback((agentId: string, name: string, initialState?: any, position?: { x: number, y: number }) => {
     dispatch({ type: 'CREATE_ASSET', payload: { agentId, name, initialState, position } });
@@ -248,8 +294,13 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       dispatch({ type: 'SET_CURRENT_VIEW', payload: view });
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    const newTheme = osState.settings.theme === 'light' ? 'dark' : 'light';
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { theme: newTheme } });
+  }, [osState.settings.theme]);
+
   return (
-    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView }}>
+    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleTheme }}>
       {children}
     </OSContext.Provider>
   );

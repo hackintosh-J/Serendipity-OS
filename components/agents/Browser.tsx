@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { AgentComponentProps } from '../../types';
 import { SendIcon } from '../../assets/icons';
@@ -24,18 +25,18 @@ const BrowserAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) 
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-200 -m-4">
-      <header className="flex-shrink-0 bg-white/80 backdrop-blur-lg border-b border-gray-300/80 p-2 flex items-center gap-2">
+    <div className="w-full h-full flex flex-col bg-gray-200 dark:bg-gray-800 -m-4">
+      <header className="flex-shrink-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-300/80 dark:border-gray-700/80 p-2 flex items-center gap-2">
         <form onSubmit={handleNavigate} className="flex-grow">
           <input
             type="text"
             value={inputValue}
             onChange={handleInputChange}
             placeholder="输入网址并按 Enter"
-            className="w-full px-3 py-1.5 bg-white/80 border border-gray-300 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+            className="w-full px-3 py-1.5 bg-white/80 dark:bg-gray-700/80 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
           />
         </form>
-        <button onClick={handleOpenInNewTab} className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">在新标签页打开</button>
+        <button onClick={handleOpenInNewTab} className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">在新标签页打开</button>
       </header>
       <div className="flex-grow relative">
         <iframe

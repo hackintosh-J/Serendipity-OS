@@ -19,10 +19,14 @@ const Desktop: React.FC = () => {
   const pullIndicatorControls = useAnimation();
   const { settings } = osState;
   
-  // Refs to manage the gesture state machine. This approach is more robust for scroll/pull interactions.
+  // A more detailed state machine for the gesture.
+  // 'idle': No gesture.
+  // 'tracking': Gesture started at the top, could be a scroll or a pull.
+  // 'pulling': Confirmed as a pull-down gesture. We take control.
+  // 'scrolling': Confirmed as a normal scroll. Browser is in control.
   const gestureState = useRef({
-    isPulling: false,
-    pullStartY: 0, // The absolute pointer Y coordinate where the pull gesture *started*.
+    state: 'idle' as 'idle' | 'tracking' | 'pulling' | 'scrolling',
+    pullStartY: 0,
   }).current;
 
   const assetPriority = (asset: ActiveAssetInstance) => {
@@ -39,37 +43,53 @@ const Desktop: React.FC = () => {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }), [osState.activeAssets]);
     
+  const handlePanStart = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    if (scrollContainer.scrollTop === 0) {
+      gestureState.state = 'tracking';
+    } else {
+      gestureState.state = 'scrolling';
+    }
+  };
+
   const handlePan = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    // Use scrollTop <= 0 for robustness against overscroll bounce effects where scrollTop can be negative.
-    const atTop = scrollContainer.scrollTop <= 0;
-
-    // Detect the transition from scrolling to pulling.
-    // This happens when at the top, not already pulling, and the gesture moves downwards.
-    // Using info.delta.y is more immediate than info.velocity.y and avoids timing issues.
-    if (!gestureState.isPulling && atTop && info.delta.y > 0) {
-      gestureState.isPulling = true;
-      // Anchor the gesture's start point to the current pointer position.
-      // All subsequent pull calculations will be relative to this point.
-      gestureState.pullStartY = info.point.y;
+    // If we're tracking, we need to decide if this is a scroll or a pull.
+    if (gestureState.state === 'tracking') {
+      // If browser starts scrolling the content, it's a scroll.
+      if (scrollContainer.scrollTop > 0) {
+        gestureState.state = 'scrolling';
+        return;
+      }
+      
+      // If we are still at the top and the user is panning down, it's a pull.
+      if (info.offset.y > 5) { // A small threshold to prevent accidental pulls
+        gestureState.state = 'pulling';
+        // Anchor the starting point of the pull gesture itself.
+        gestureState.pullStartY = info.point.y;
+        
+        // From now on, we take over.
+        if (event.cancelable) event.preventDefault();
+      }
     }
 
-    if (gestureState.isPulling) {
-      // Prevent the browser's default overscroll behavior (e.g., page refresh).
+    if (gestureState.state === 'pulling') {
+      // Ensure we keep preventing default for the rest of the pull gesture.
       if (event.cancelable) event.preventDefault();
 
       const currentPullDistance = info.point.y - gestureState.pullStartY;
 
-      // If the user starts panning back up, exit pulling mode.
+      // If user reverses direction, let's treat the pull as cancelled.
       if (currentPullDistance < 0) {
-        gestureState.isPulling = false;
+        gestureState.state = 'scrolling';
         pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
         return;
       }
       
-      // Update the visual indicator based on the pull distance.
       const limitedPullDistance = Math.min(currentPullDistance, 150);
       const progress = limitedPullDistance > 0 ? limitedPullDistance / 150 : 0;
       
@@ -83,18 +103,17 @@ const Desktop: React.FC = () => {
   };
 
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const pullThreshold = 70; // A reasonable distance to confirm intent.
+    const pullThreshold = 70;
 
-    // Only trigger if we were in a pulling state.
-    if (gestureState.isPulling) {
+    if (gestureState.state === 'pulling') {
         const finalPullDistance = info.point.y - gestureState.pullStartY;
         if (finalPullDistance > pullThreshold) {
           setControlCenterOpen(true);
         }
     }
 
-    // Always reset state and hide the indicator when the gesture ends.
-    gestureState.isPulling = false;
+    // Always reset state and hide indicator when the gesture ends.
+    gestureState.state = 'idle';
     pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
   };
 
@@ -106,9 +125,9 @@ const Desktop: React.FC = () => {
     >
         <motion.div 
             ref={scrollContainerRef}
+            onPanStart={handlePanStart}
             onPan={handlePan}
             onPanEnd={handlePanEnd}
-            // `pan-y` allows vertical panning, which our handlers will then conditionally control.
             style={{ touchAction: 'pan-y' }}
             className="h-full w-full bg-gradient-to-br from-rose-100/80 via-purple-100/80 to-indigo-100/80 dark:from-gray-900/80 dark:via-purple-900/40 dark:to-indigo-900/80 overflow-y-auto p-4 sm:p-6 overscroll-behavior-y-contain relative"
         >

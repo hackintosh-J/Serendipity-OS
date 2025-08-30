@@ -82,7 +82,7 @@ class ASTService {
               // This is an ast_bubble file.
               // Generate a new ID to prevent conflicts with existing assets.
               const newAsset = importedData.asset as ActiveAssetInstance;
-              const newId = `aa-${crypto.randomUUID()}`;
+              const newId = `aa-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`;
               newAsset.id = newId;
 
               const singleAssetImport: Partial<OSState> = {

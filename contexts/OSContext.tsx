@@ -16,7 +16,7 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
       const agent = state.installedAgents[agentId];
       if (!agent) return state;
       const newAsset: ActiveAssetInstance = {
-        id: `aa-${crypto.randomUUID()}`,
+        id: `aa-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`,
         agentId,
         name,
         state: initialState ?? agent.defaultState,
@@ -206,7 +206,7 @@ interface IOSContext {
   setControlCenterOpen: (isOpen: boolean) => void;
   setCurrentView: (view: 'desktop' | 'glance') => void;
   toggleTheme: () => void;
-  triggerInsightGeneration: () => Promise<void>;
+  triggerInsightGeneration: () => void;
   deleteArchivedInsight: (assetId: string) => void;
   restoreArchivedInsight: (assetId: string) => void;
 }
@@ -257,51 +257,76 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [osState]);
   
-  const generateAndCreateInsight = useCallback(async () => {
-    const { settings } = osState;
+  const triggerInsightGeneration = useCallback(() => {
+    const { settings, activeAssets } = osState;
     if (!settings.geminiApiKey) {
         console.log("Cannot generate insight without Gemini API key.");
         return;
     }
-
-    // Prevents multiple generations at once. A proper implementation would use a loading state.
-    if (Object.values(osState.activeAssets).some(a => a.name === '正在生成...')) {
+    // Prevent multiple generations at once
+    if (Object.values(activeAssets).some(a => a.state.generationStatus === 'pending' || a.state.generationStatus === 'in-progress')) {
+        console.log("An insight is already being generated.");
         return;
     }
-    
-    const loadingAssetId = `loading-${crypto.randomUUID()}`;
-    // Create a temporary placeholder
     dispatch({
         type: 'CREATE_ASSET',
         payload: {
             agentId: 'agent.system.insight',
             name: '正在生成...',
-            initialState: { content: 'AI正在为您准备惊喜...' }
+            initialState: { content: 'AI正在为您准备惊喜...', generationStatus: 'pending' }
         }
     });
+  }, [osState, dispatch]);
 
-    const insight = await geminiService.generateInsight(osState, settings.geminiApiKey);
+  // Effect to handle the lifecycle of AI insight generation
+  useEffect(() => {
+    if (!osState.isInitialized) return;
     
-    // Find and delete the placeholder. A more robust solution might update it.
-    const loadingAsset = Object.values(osState.activeAssets).find(a => a.name === '正在生成...');
-    if (loadingAsset) {
-        dispatch({ type: 'DELETE_ASSET', payload: { assetId: loadingAsset.id }});
-    }
+    const pendingAsset = Object.values(osState.activeAssets).find(
+        asset => asset.agentId === 'agent.system.insight' && asset.state.generationStatus === 'pending'
+    );
 
-    if (insight && insight.type !== 'error') {
-        let generated_image = null;
-        if (insight.image_prompt) {
-            generated_image = await geminiService.generateImage(insight.image_prompt, settings.geminiApiKey);
-        }
-
-        dispatch({ 
-            type: 'CREATE_ASSET', 
+    if (pendingAsset && osState.settings.geminiApiKey) {
+        // Immediately mark as in-progress to prevent re-triggering
+        dispatch({
+            type: 'UPDATE_ASSET_STATE',
             payload: {
-                agentId: 'agent.system.insight',
-                name: insight.title || '来自AI的灵感',
-                initialState: { ...insight, generated_image },
+                assetId: pendingAsset.id,
+                newState: { ...pendingAsset.state, generationStatus: 'in-progress' }
             }
         });
+
+        const generate = async () => {
+            try {
+                const insight = await geminiService.generateInsight(osState, osState.settings.geminiApiKey!);
+                if (insight && insight.type !== 'error') {
+                    let generated_image = null;
+                    if (insight.image_prompt) {
+                        generated_image = await geminiService.generateImage(insight.image_prompt, osState.settings.geminiApiKey!);
+                    }
+                    dispatch({ 
+                        type: 'UPDATE_ASSET_METADATA', 
+                        payload: { 
+                            assetId: pendingAsset.id, 
+                            name: insight.title || '来自AI的灵感'
+                        }
+                    });
+                    dispatch({
+                        type: 'UPDATE_ASSET_STATE',
+                        payload: {
+                            assetId: pendingAsset.id,
+                            newState: { ...insight, generated_image, generationStatus: 'complete' }
+                        }
+                    });
+                } else {
+                    throw new Error(insight?.content || 'AI returned an error.');
+                }
+            } catch (error) {
+                console.error("Insight generation failed:", error);
+                dispatch({ type: 'DELETE_ASSET', payload: { assetId: pendingAsset.id } });
+            }
+        };
+        generate();
     }
   }, [osState, dispatch]);
 
@@ -311,27 +336,10 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const hasArchivedInsights = osState.insightHistory.length > 0;
         if (!hasInsights && !hasArchivedInsights) {
             console.log("Generating initial AI insight on first load...");
-            generateAndCreateInsight();
+            triggerInsightGeneration();
         }
     }
-  }, [osState.isInitialized, osState.insightHistory.length, osState.activeAssets, generateAndCreateInsight]);
-
-  // Effect to watch for agent-initiated system actions
-  useEffect(() => {
-    if (!osState.isInitialized) return;
-
-    Object.values(osState.activeAssets).forEach(asset => {
-        if (asset.agentId === 'agent.system.insight' && asset.state.action === 'SET_WALLPAPER') {
-            dispatch({ type: 'UPDATE_SETTINGS', payload: { wallpaper: asset.state.wallpaperUrl } });
-            // Clear the action from the asset state to prevent re-triggering
-            dispatch({ 
-                type: 'UPDATE_ASSET_STATE', 
-                payload: { assetId: asset.id, newState: { ...asset.state, action: null } }
-            });
-        }
-    });
-
-  }, [osState.activeAssets, osState.isInitialized]);
+  }, [osState.isInitialized, osState.insightHistory.length, osState.activeAssets, triggerInsightGeneration]);
 
 
   const createAsset = useCallback((agentId: string, name: string, initialState?: any, position?: { x: number, y: number }) => {
@@ -380,7 +388,7 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, [osState.settings.theme]);
 
   return (
-    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleTheme, triggerInsightGeneration: generateAndCreateInsight, deleteArchivedInsight, restoreArchivedInsight }}>
+    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleTheme, triggerInsightGeneration, deleteArchivedInsight, restoreArchivedInsight }}>
       {children}
     </OSContext.Provider>
   );

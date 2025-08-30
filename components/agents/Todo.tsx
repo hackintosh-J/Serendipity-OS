@@ -18,7 +18,7 @@ const TodoAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => 
         if (!newTodoText.trim()) return;
 
         const newTodo: Todo = {
-            id: crypto.randomUUID(),
+            id: `todo-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`,
             text: newTodoText.trim(),
             completed: false,
         };

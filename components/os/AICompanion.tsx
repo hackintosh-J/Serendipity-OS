@@ -37,19 +37,19 @@ const AIPanel: React.FC = () => {
   const processAIResponse = useCallback(async (prompt: string) => {
     setIsLoading(true);
     setInput('');
-    const userMessage: Message = { id: crypto.randomUUID(), sender: 'user', text: prompt };
+    const userMessage: Message = { id: `msg-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`, sender: 'user', text: prompt };
     setMessages(prev => [...prev, userMessage]);
 
     const apiKey = settings.geminiApiKey;
 
     if (!geminiService.isConfigured(apiKey)) {
-      const aiMessage: Message = { id: crypto.randomUUID(), sender: 'ai', text: 'AI服务当前不可用。请前往“设置”并提供您的 Gemini API 密钥。' };
+      const aiMessage: Message = { id: `msg-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`, sender: 'ai', text: 'AI服务当前不可用。请前往“设置”并提供您的 Gemini API 密钥。' };
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
       return;
     }
     
-    const aiMessageId = crypto.randomUUID();
+    const aiMessageId = `msg-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`;
     let currentAiMessage: Message = { id: aiMessageId, sender: 'ai', text: '', thinkingText: '', isThinking: true };
     setMessages(prev => [...prev, currentAiMessage]);
     
@@ -158,7 +158,7 @@ const AIPanel: React.FC = () => {
   useEffect(() => {
     if (aiPanelState === 'panel') {
       if (messages.length === 0) {
-        setMessages([{ id: crypto.randomUUID(), sender: 'ai', text: `你好，${settings.userName}！有什么可以帮您？` }]);
+        setMessages([{ id: `msg-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`, sender: 'ai', text: `你好，${settings.userName}！有什么可以帮您？` }]);
       }
       setTimeout(() => inputRef.current?.focus(), 150);
     } else if (aiPanelState === 'closed') {

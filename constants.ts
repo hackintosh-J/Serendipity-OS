@@ -13,8 +13,8 @@ const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, update
     const handleSetWallpaper = () => {
         if(generated_image) {
             const wallpaperUrl = `data:image/jpeg;base64,${generated_image}`;
-            // This action is caught by a listener in OSContext
-            updateState({ ...state, action: 'SET_WALLPAPER', wallpaperUrl });
+            dispatch({ type: 'UPDATE_SETTINGS', payload: { wallpaper: wallpaperUrl } });
+            updateState({ ...state, wallpaper_feedback: '壁纸已设置！' });
         }
     };
     
@@ -34,7 +34,7 @@ const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, update
                 React.createElement(Button, { onClick: handleArchive, variant: 'secondary', icon: DownloadIcon, children: "存档" })
             )
         ),
-        state.action === 'SET_WALLPAPER' && React.createElement('p', { className: "text-sm text-green-600 dark:text-green-400 mt-4 font-semibold" }, "壁纸已设置！")
+        state.wallpaper_feedback && React.createElement('p', { className: "text-sm text-green-600 dark:text-green-400 mt-4 font-semibold" }, state.wallpaper_feedback)
     );
 };
 
@@ -125,7 +125,7 @@ const insightAgent: AgentDefinition = {
     description: '由AI主动生成的惊喜和建议。',
     icon: StarIcon,
     component: InsightAgentComponent,
-    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, generated_image: null },
+    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, generated_image: null, generationStatus: 'complete' },
     size: 'full',
 };
 

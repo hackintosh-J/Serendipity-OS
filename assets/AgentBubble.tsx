@@ -49,7 +49,8 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
 
   // Simulate weather updates
   useEffect(() => {
-    if (asset.agentId === 'agent.system.weather' && asset.state.data) {
+    // FIX: Add guard to ensure asset.state exists before accessing its properties.
+    if (asset.agentId === 'agent.system.weather' && asset.state && asset.state.data) {
         const thirtyMinutes = 30 * 60 * 1000;
         const lastUpdated = new Date(asset.state.lastUpdated).getTime();
         if (Date.now() - lastUpdated > thirtyMinutes) {
@@ -79,9 +80,16 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
   };
   
   const CardPreview: React.FC = () => {
+    // FIX: Add a defensive check for asset.state to prevent crashes from corrupted data.
+    if (!asset.state) {
+        return <p className="text-sm text-red-500 dark:text-red-400">资产状态错误。</p>;
+    }
+
     switch(asset.agentId) {
-        case 'agent.system.memo':
-            return <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap break-words">{asset.state.content.substring(0, 200)}{asset.state.content.length > 200 ? '...' : ''}</p>;
+        case 'agent.system.memo': {
+            const content = asset.state.content || '';
+            return <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap break-words">{content.substring(0, 200)}{content.length > 200 ? '...' : ''}</p>;
+        }
         case 'agent.system.browser':
              return <p className="text-sm text-gray-600 dark:text-gray-400 italic">一个安全的沙盒化浏览器。</p>;
         case 'agent.system.weather':

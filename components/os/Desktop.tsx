@@ -5,11 +5,12 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { ActiveAssetInstance } from '../../types';
 import { ChevronDownIcon } from '../../assets/icons';
 
-// FIX: Add `delta` to PanInfo type definition to correctly handle gesture changes frame by frame.
+// FIX: Add `point` to PanInfo type definition to use absolute pointer coordinates for robust gesture detection.
 type PanInfo = {
   offset: { x: number; y: number; };
   velocity: { x: number; y: number; };
   delta: { x: number; y: number; };
+  point: { x: number; y: number; };
 };
 
 const Desktop: React.FC = () => {
@@ -18,9 +19,11 @@ const Desktop: React.FC = () => {
   const pullIndicatorControls = useAnimation();
   const { settings } = osState;
   
-  // Refs to manage the gesture state machine
-  const isPullingRef = useRef(false);
-  const pullDistanceRef = useRef(0);
+  // Refs to manage the gesture state machine. This approach is more robust for scroll/pull interactions.
+  const gestureState = useRef({
+    isPulling: false,
+    pullStartY: 0, // The absolute pointer Y coordinate where the pull gesture *started*.
+  }).current;
 
   const assetPriority = (asset: ActiveAssetInstance) => {
     if (asset.agentId === 'agent.system.insight') return -1; // Insights always on top
@@ -40,62 +43,58 @@ const Desktop: React.FC = () => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    const atTop = scrollContainer.scrollTop === 0;
-    // Use velocity to determine the gesture's intent direction.
-    const isIntentionalPullDown = info.velocity.y > 0;
+    // Use scrollTop <= 0 for robustness against overscroll bounce effects where scrollTop can be negative.
+    const atTop = scrollContainer.scrollTop <= 0;
 
-    // --- Gesture State Machine ---
-
-    // 1. Check if we should ENTER pull mode.
-    // This happens if we are not already pulling, are at the top, and the user is pulling down.
-    if (!isPullingRef.current && atTop && isIntentionalPullDown) {
-        isPullingRef.current = true;
-        // Reset distance to start counting from this exact moment.
-        pullDistanceRef.current = 0; 
+    // Detect the transition from scrolling to pulling.
+    // This happens when at the top, not already pulling, and the gesture moves downwards.
+    // Using info.delta.y is more immediate than info.velocity.y and avoids timing issues.
+    if (!gestureState.isPulling && atTop && info.delta.y > 0) {
+      gestureState.isPulling = true;
+      // Anchor the gesture's start point to the current pointer position.
+      // All subsequent pull calculations will be relative to this point.
+      gestureState.pullStartY = info.point.y;
     }
-    
-    // 2. If in pull mode, process the gesture.
-    if (isPullingRef.current) {
-        // Stop the browser from taking over (e.g., pull-to-refresh).
-        // This is crucial for a smooth experience.
-        if (event.cancelable) {
-            event.preventDefault();
-        }
-        
-        // Accumulate the delta. This allows the user to "push back" the indicator.
-        pullDistanceRef.current += info.delta.y;
 
-        // If the user has pushed back up past the starting point, exit pull mode.
-        if (pullDistanceRef.current < 0) {
-            isPullingRef.current = false;
-            pullDistanceRef.current = 0;
-        }
+    if (gestureState.isPulling) {
+      // Prevent the browser's default overscroll behavior (e.g., page refresh).
+      if (event.cancelable) event.preventDefault();
 
-        // Update the visual indicator based on the pull distance.
-        const limitedPullDistance = Math.min(pullDistanceRef.current, 150);
-        const progress = limitedPullDistance > 0 ? limitedPullDistance / 150 : 0;
-        
-        pullIndicatorControls.start({
-            opacity: progress,
-            scale: 0.8 + progress * 0.2,
-            y: limitedPullDistance / 2,
-            transition: { duration: 0 }
-        });
+      const currentPullDistance = info.point.y - gestureState.pullStartY;
+
+      // If the user starts panning back up, exit pulling mode.
+      if (currentPullDistance < 0) {
+        gestureState.isPulling = false;
+        pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
+        return;
+      }
+      
+      // Update the visual indicator based on the pull distance.
+      const limitedPullDistance = Math.min(currentPullDistance, 150);
+      const progress = limitedPullDistance > 0 ? limitedPullDistance / 150 : 0;
+      
+      pullIndicatorControls.start({
+          opacity: progress,
+          scale: 0.8 + progress * 0.2,
+          y: limitedPullDistance / 2,
+          transition: { type: 'spring', stiffness: 500, damping: 40 }
+      });
     }
-    // 3. If not in pull mode, do nothing and let the browser handle scrolling.
   };
 
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const pullThreshold = 50; 
-    
-    // If the gesture ended while we were in pull mode and passed the threshold, open the center.
-    if (isPullingRef.current && pullDistanceRef.current > pullThreshold) {
-      setControlCenterOpen(true);
+    const pullThreshold = 70; // A reasonable distance to confirm intent.
+
+    // Only trigger if we were in a pulling state.
+    if (gestureState.isPulling) {
+        const finalPullDistance = info.point.y - gestureState.pullStartY;
+        if (finalPullDistance > pullThreshold) {
+          setControlCenterOpen(true);
+        }
     }
 
-    // Always reset state and hide indicator on gesture end.
-    isPullingRef.current = false;
-    pullDistanceRef.current = 0;
+    // Always reset state and hide the indicator when the gesture ends.
+    gestureState.isPulling = false;
     pullIndicatorControls.start({ opacity: 0, scale: 0.8, y: 0, transition: { duration: 0.2 } });
   };
 
@@ -109,7 +108,7 @@ const Desktop: React.FC = () => {
             ref={scrollContainerRef}
             onPan={handlePan}
             onPanEnd={handlePanEnd}
-            // Give direct control over vertical panning to our handlers to prevent conflicts.
+            // `pan-y` allows vertical panning, which our handlers will then conditionally control.
             style={{ touchAction: 'pan-y' }}
             className="h-full w-full bg-gradient-to-br from-rose-100/80 via-purple-100/80 to-indigo-100/80 dark:from-gray-900/80 dark:via-purple-900/40 dark:to-indigo-900/80 overflow-y-auto p-4 sm:p-6 overscroll-behavior-y-contain relative"
         >

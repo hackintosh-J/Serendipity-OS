@@ -45,9 +45,12 @@ const Desktop: React.FC = () => {
       if (firstCard) {
         const containerRect = scrollContainer.getBoundingClientRect();
         const firstCardRect = firstCard.getBoundingClientRect();
-        // This check is more robust for iOS overscroll (rubber banding) than scrollTop === 0.
-        // If the card's top is at or above the container's top, we are at the top.
-        if (firstCardRect.top >= containerRect.top) {
+        // Add a small tolerance to the 'isAtTop' check. This makes the pull-down gesture
+        // more reliable, especially on iOS where scroll bouncing can cause slight
+        // pixel misalignments. A 5px tolerance allows the gesture to trigger even
+        // if the card is a few pixels "inside" the top of the container.
+        const tolerance = 5;
+        if (firstCardRect.top >= containerRect.top - tolerance) {
           isAtTop = true;
         }
       } else {

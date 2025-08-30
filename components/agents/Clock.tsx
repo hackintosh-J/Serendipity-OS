@@ -32,7 +32,7 @@ const ClockAgent: React.FC<AgentComponentProps> = ({ instance }) => {
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center text-center text-white p-4 bg-gradient-to-br from-indigo-800 to-gray-900 rounded-lg -m-4">
-        <p className="text-7xl md:text-8xl font-mono font-bold tracking-widest tabular-nums drop-shadow-lg">
+        <p className="text-6xl md:text-7xl font-mono font-bold tracking-widest tabular-nums drop-shadow-lg">
             {formatTime(time)}
         </p>
         <p className="text-lg md:text-xl text-indigo-200 mt-2">

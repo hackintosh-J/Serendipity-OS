@@ -35,7 +35,7 @@ const LiveClockPreview: React.FC = () => {
     }, []);
     return (
         <div className="flex items-center justify-center text-gray-700">
-            <p className="text-4xl font-mono tabular-nums">
+            <p className="text-3xl font-mono tabular-nums">
                 {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </p>
         </div>

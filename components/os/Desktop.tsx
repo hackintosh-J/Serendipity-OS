@@ -1,12 +1,11 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from './AgentBubble';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ActiveAssetInstance } from '../../types';
 
 const Desktop: React.FC = () => {
-  const { osState, setControlCenterOpen } = useOS();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { osState } = useOS();
 
   const assetPriority = (asset: ActiveAssetInstance) => {
     if (asset.agentId === 'agent.system.clock' || asset.agentId === 'agent.system.weather' || asset.agentId === 'agent.system.calculator') return 0;
@@ -21,25 +20,10 @@ const Desktop: React.FC = () => {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }), [osState.activeAssets]);
     
-  const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = 50;
-    const velocityThreshold = 200;
-    const { offset, velocity } = info;
-
-    const isScrolledToTop = scrollContainerRef.current?.scrollTop === 0;
-    const isVerticalSwipe = Math.abs(offset.y) > Math.abs(offset.x);
-
-    // Swipe Down for Control Center, ONLY if at the top
-    if (isScrolledToTop && isVerticalSwipe && offset.y > swipeThreshold && velocity.y > velocityThreshold) {
-        setControlCenterOpen(true);
-    }
-  };
 
   return (
     <motion.div 
-      ref={scrollContainerRef}
       className="h-full w-full bg-gradient-to-br from-rose-100 via-purple-100 to-indigo-100 overflow-y-auto p-4 sm:p-6 overscroll-behavior-y-contain"
-      onPanEnd={handlePanEnd}
     >
       <motion.div 
         layout 

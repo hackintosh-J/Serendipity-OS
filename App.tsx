@@ -11,7 +11,7 @@ import GlanceView from './components/os/GlanceView';
 import { motion, AnimatePresence, PanInfo, Transition } from 'framer-motion';
 
 const MainViewport: React.FC = () => {
-  const { osState, setCurrentView } = useOS();
+  const { osState, setCurrentView, setControlCenterOpen } = useOS();
   const { ui: { aiPanelState, currentView, isControlCenterOpen } } = osState;
   const isAiPanelOpen = aiPanelState === 'panel';
   
@@ -30,8 +30,11 @@ const MainViewport: React.FC = () => {
       if (offset.x < -swipeThreshold && velocity.x < -velocityThreshold) {
         setCurrentView('glance');
       }
+      // Swipe Right to open Control Center
+      if (offset.x > swipeThreshold && velocity.x > velocityThreshold) {
+        setControlCenterOpen(true);
+      }
     }
-    // Note: Swipe down for Control Center is now handled within Desktop.tsx
   };
 
   const handleGlancePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {

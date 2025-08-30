@@ -22,7 +22,7 @@ const GlanceView: React.FC = () => {
               <motion.div
                 key={asset.id}
                 layoutId={`asset-bubble-${asset.id}`}
-                className="bg-white/60 backdrop-blur-xl rounded-2xl p-2 cursor-pointer text-center flex flex-col items-center justify-center aspect-square"
+                className="bg-white/80 rounded-2xl p-2 cursor-pointer text-center flex flex-col items-center justify-center aspect-square"
                 onClick={() => viewAsset(asset.id)}
                 whileHover={{ scale: 1.05 }}
               >

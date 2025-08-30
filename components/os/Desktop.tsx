@@ -107,14 +107,14 @@ const Desktop: React.FC = () => {
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             style={{ y }}
-            className="h-full w-full absolute inset-0 cursor-grab"
-            onPointerDown={handlePointerDown}
-            onPointerUp={resetTouchAction}
-            onPointerCancel={resetTouchAction}
+            className="h-full w-full absolute inset-0"
         >
           <div
               ref={scrollContainerRef}
-              className="h-full w-full overflow-y-auto overscroll-behavior-y-contain"
+              className="h-full w-full overflow-y-auto overscroll-behavior-y-contain cursor-grab"
+              onPointerDown={handlePointerDown}
+              onPointerUp={resetTouchAction}
+              onPointerCancel={resetTouchAction}
           >
               <motion.div 
                   layout 

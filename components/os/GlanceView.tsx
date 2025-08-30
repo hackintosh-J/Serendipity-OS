@@ -82,14 +82,14 @@ const GlanceView: React.FC = () => {
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             style={{ y }}
-            className="h-full w-full absolute inset-0 cursor-grab"
-            onPointerDown={handlePointerDown}
-            onPointerUp={resetTouchAction}
-            onPointerCancel={resetTouchAction}
+            className="h-full w-full absolute inset-0"
         >
           <div
             ref={scrollContainerRef}
-            className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6 md:p-8"
+            className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6 md:p-8 cursor-grab"
+            onPointerDown={handlePointerDown}
+            onPointerUp={resetTouchAction}
+            onPointerCancel={resetTouchAction}
           >
               <div className="max-w-3xl mx-auto">
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">速览</h1>

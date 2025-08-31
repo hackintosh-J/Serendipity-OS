@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { OSProvider, useOS } from './contexts/OSContext';
 import SystemBar from './components/os/SystemBar';
@@ -84,6 +85,7 @@ const MainViewport: React.FC = () => {
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.5}
+            dragDirectionLock={true}
             onDragEnd={(e, { offset, velocity }) => {
               const swipe = swipePower(offset.x, velocity.x);
 

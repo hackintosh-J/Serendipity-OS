@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ActiveAssetInstance } from '../types';
 import { useOS } from '../contexts/OSContext';
 import { astService } from '../services/astService';
-import { CloudIcon, DownloadIcon, ClockIcon, CalculatorIcon, TrashIcon } from './icons';
+import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon } from './icons';
 import { motion, PanInfo } from 'framer-motion';
 
 interface AgentBubbleProps {
   asset: ActiveAssetInstance;
-  scale: number;
-  onDragEnd: (assetId: string, info: PanInfo) => void;
+  isDraggable: boolean;
+  scale?: number;
+  onDragEnd?: (assetId: string, info: PanInfo) => void;
 }
 
 const cardVariants = {
@@ -18,8 +19,8 @@ const cardVariants = {
 };
 
 const LiveClockPreview: React.FC = () => {
-    const [time, setTime] = useState(new Date());
-    useEffect(() => {
+    const [time, setTime] = React.useState(new Date());
+    React.useEffect(() => {
         const timerId = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timerId);
     }, []);
@@ -32,7 +33,7 @@ const LiveClockPreview: React.FC = () => {
     );
 };
 
-const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) => {
+const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, isDraggable, scale = 1, onDragEnd }) => {
   const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
 
@@ -51,10 +52,10 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) =>
   }
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent click from firing after a drag
-    if (e.detail > 0) {
-      viewAsset(asset.id);
+    if ((e.target as HTMLElement).closest('button')) {
+        return;
     }
+    viewAsset(asset.id);
   };
   
   const CardPreview: React.FC = () => {
@@ -65,7 +66,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) =>
     switch(asset.agentId) {
         case 'agent.system.memo': {
             const content = asset.state.content || '';
-            return <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{content.substring(0, 200)}{content.length > 200 ? '...' : ''}</p>;
+            return <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words overflow-hidden">{content.substring(0, 200)}{content.length > 200 ? '...' : ''}</p>;
         }
         case 'agent.system.browser':
              return <p className="text-sm text-muted-foreground italic">一个安全的沙盒化浏览器。</p>;
@@ -117,11 +118,11 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) =>
     small: 'w-48 h-32',
     medium: 'w-80 h-48',
     full: 'w-[480px] h-72',
-  }
-  const currentSize = sizeClasses[agentDef.size || 'medium'];
+  };
+  const canvasSizeClass = sizeClasses[agentDef.size || 'medium'];
 
-  // Simplified view for when zoomed out
-  if (scale < 0.4) {
+  // Simplified view for when zoomed out on canvas
+  if (isDraggable && scale < 0.4) {
     return (
         <motion.div
             layoutId={`asset-bubble-${asset.id}`}
@@ -129,18 +130,17 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) =>
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute p-2 flex flex-col items-center justify-center bg-card-glass rounded-full shadow-md"
+            className="absolute p-2 flex flex-col items-center justify-center bg-card-glass rounded-full shadow-md cursor-pointer"
+            role="button"
             style={{ 
                 left: asset.position.x, 
                 top: asset.position.y,
                 width: 80,
                 height: 80,
-                x: 0, // Reset transform so drag works correctly
-                y: 0,
             }}
              onClick={handleCardClick}
              drag
-             onDragEnd={(e, info) => onDragEnd(asset.id, info)}
+             onDragEnd={(e, info) => onDragEnd && onDragEnd(asset.id, info)}
              dragMomentum={false}
         >
             <agentDef.icon className="w-8 h-8 text-foreground" />
@@ -148,6 +148,20 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) =>
         </motion.div>
     );
   }
+
+  const dragProps = (isDraggable && onDragEnd) ? {
+      drag: true,
+      onDragEnd: (e: Event, info: PanInfo) => onDragEnd(asset.id, info),
+      dragMomentum: false,
+      onDragStart: (e: Event) => e.stopPropagation(), // Prevent canvas pan while dragging bubble
+  } : {};
+
+  const containerClasses = [
+    'bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-primary/30',
+    isDraggable ? `absolute ${canvasSizeClass}` : 'relative w-full h-full'
+  ].join(' ');
+
+  const positionStyle = isDraggable ? { left: asset.position.x, top: asset.position.y } : {};
 
   return (
     <motion.div
@@ -157,22 +171,15 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) =>
       animate="visible"
       exit="exit"
       transition={{ type: 'spring', duration: 0.5 }}
-      whileHover={{ scale: 1.02, transition: { type: 'spring', duration: 0.2 } }}
-      className={`absolute bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-primary/30 ${currentSize}`}
-      style={{ 
-        left: asset.position.x, 
-        top: asset.position.y,
-        x: 0, // Reset transform so drag works correctly
-        y: 0,
-       }}
+      whileHover={{ scale: isDraggable ? 1.02 : 1, transition: { type: 'spring', duration: 0.2 } }}
+      className={containerClasses}
+      style={positionStyle}
       onClick={handleCardClick}
       aria-label={`打开 ${asset.name}`}
-      drag
-      onDragEnd={(e, info) => onDragEnd(asset.id, info)}
-      dragMomentum={false}
-      onDragStart={(e) => e.stopPropagation()} // Prevent canvas pan while dragging bubble
+      role="button"
+      {...dragProps}
     >
-      <header className="flex justify-between items-start mb-3 flex-shrink-0">
+      <header data-is-bubble-header="true" className="flex justify-between items-start mb-3 flex-shrink-0">
         <div className="flex items-center space-x-3 min-w-0">
           {!isMinimalPreview && (
             <div className="w-10 h-10 bg-secondary rounded-lg shadow-inner flex items-center justify-center flex-shrink-0">
@@ -199,11 +206,11 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) =>
         </div>
       </header>
 
-      <main className={`flex-grow min-h-0 flex items-center ${isMinimalPreview ? 'justify-center' : ''} overflow-hidden`}>
+      <main className={`flex-grow min-h-0 flex items-center ${isMinimalPreview ? 'justify-center' : ''} overflow-hidden pointer-events-none`}>
         <CardPreview />
       </main>
       
-      <footer className="text-xs text-muted-foreground/80 mt-2 self-end flex-shrink-0">
+      <footer className="text-xs text-muted-foreground/80 mt-2 self-end flex-shrink-0 pointer-events-none">
         更新于: {new Date(asset.updatedAt).toLocaleTimeString()}
       </footer>
     </motion.div>

@@ -155,7 +155,7 @@ const initialWelcomeAssetState = {
 ## 如何开始？
 
 - **在桌面顶部下拉** 打开控制中心。
-- **拖拽和缩放** 来探索您的空间画布。
+- **拖拽和缩放** 来探索您的空间画布 (仅限桌面端)。
 - **点击Dock栏的AI图标** 与您的AI助手交谈。
 - **在AI助手中点击“创建”** 查看所有可用的Agent并创建新的资产。
 - **点击气泡** 打开它并进行交互。
@@ -168,8 +168,8 @@ export const INITIAL_OS_STATE: OSState = {
   isInitialized: false,
   settings: {
     userName: '探索者',
-    themeName: 'nebula',
-    themeMode: 'dark',
+    themeName: 'default',
+    themeMode: 'light',
     geminiApiKey: null,
     wallpaper: null,
   },
@@ -180,7 +180,7 @@ export const INITIAL_OS_STATE: OSState = {
         agentId: 'agent.system.memo',
         name: '欢迎使用',
         state: initialWelcomeAssetState,
-        position: { x: 50, y: 100 },
+        position: { x: 20, y: 20 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     },
@@ -189,7 +189,7 @@ export const INITIAL_OS_STATE: OSState = {
         agentId: 'agent.system.clock',
         name: '时钟',
         state: {},
-        position: { x: 450, y: 80 },
+        position: { x: 400, y: 20 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     },
@@ -198,7 +198,7 @@ export const INITIAL_OS_STATE: OSState = {
         agentId: 'agent.system.weather',
         name: '北京天气',
         state: { location: '北京', data: null, lastUpdated: null },
-        position: { x: 450, y: 250 },
+        position: { x: 400, y: 180 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     },
@@ -211,7 +211,7 @@ export const INITIAL_OS_STATE: OSState = {
                 { time: '09:00', text: '开始新的一天！' }
             ]
         }, viewDate: new Date().toISOString() },
-        position: { x: 50, y: 400 },
+        position: { x: 20, y: 250 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     },
@@ -224,7 +224,7 @@ export const INITIAL_OS_STATE: OSState = {
             {id: '2', text: '面包', completed: true},
             {id: '3', text: '鸡蛋', completed: false} 
         ] },
-        position: { x: 650, y: 150 },
+        position: { x: 600, y: 80 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     }

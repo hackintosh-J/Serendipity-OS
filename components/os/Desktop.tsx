@@ -74,6 +74,24 @@ const Desktop: React.FC = () => {
     const sortedAssets = Object.values(osState.activeAssets)
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
+    // Group assets to allow small assets to sit side-by-side
+    const groupedAssets = sortedAssets.reduce<any[][]>((acc, asset) => {
+        const agentDef = osState.installedAgents[asset.agentId];
+        if (agentDef && agentDef.size === 'small') {
+            const lastGroup = acc[acc.length - 1];
+            // If the last group is also a small item and has only one item, add to it.
+            if (lastGroup && lastGroup.length === 1 && osState.installedAgents[lastGroup[0].agentId]?.size === 'small') {
+                lastGroup.push(asset);
+            } else {
+                acc.push([asset]); // Start a new group for the small asset
+            }
+        } else {
+            acc.push([asset]); // Full/medium assets get their own group
+        }
+        return acc;
+    }, []);
+
+
     return (
         <div className="h-full w-full relative overflow-hidden">
             <motion.div 
@@ -93,23 +111,42 @@ const Desktop: React.FC = () => {
                     ref={scrollContainerRef}
                     className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6"
                 >
-                    <div className="max-w-2xl mx-auto">
-                        {sortedAssets.map((asset, index) => {
-                             const agentDef = osState.installedAgents[asset.agentId];
-                             if (!agentDef) return null;
-                             const sizeClasses = {
-                                small: 'h-36',
+                    <div className="max-w-2xl mx-auto space-y-4">
+                       {groupedAssets.map((group, groupIndex) => {
+                           if (group.length > 1) {
+                               // Render a row of small assets
+                               return (
+                                   <div key={`group-${groupIndex}`} className="flex flex-col sm:flex-row gap-4">
+                                       {group.map(asset => {
+                                            const agentDef = osState.installedAgents[asset.agentId];
+                                            if (!agentDef) return null;
+                                            return (
+                                                <div key={asset.id} className="h-36 w-full sm:w-1/2">
+                                                    <AgentBubble asset={asset} />
+                                                </div>
+                                            )
+                                       })}
+                                   </div>
+                               )
+                           }
+
+                           // Render a single, larger asset
+                           const asset = group[0];
+                           const agentDef = osState.installedAgents[asset.agentId];
+                           if (!agentDef) return null;
+                           const sizeClasses = {
+                                small: 'h-36', // Fallback for single small asset
                                 medium: 'h-52',
                                 full: 'h-72',
-                              };
-                              const heightClass = sizeClasses[agentDef.size || 'medium'];
+                           };
+                           const heightClass = sizeClasses[agentDef.size || 'medium'];
 
-                            return (
-                                <div key={asset.id} className={`${heightClass} ${index < sortedAssets.length -1 ? 'mb-4' : ''}`}>
-                                    <AgentBubble asset={asset} />
-                                </div>
-                            )
-                        })}
+                           return (
+                               <div key={asset.id} className={heightClass}>
+                                   <AgentBubble asset={asset} />
+                               </div>
+                           )
+                       })}
                     </div>
                 </div>
             </motion.div>

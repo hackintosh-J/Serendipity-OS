@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { OSProvider, useOS } from './contexts/OSContext';
 import SystemBar from './components/os/SystemBar';
 import Desktop from './components/os/Desktop';
@@ -9,10 +10,56 @@ import ControlCenter from './components/os/ControlCenter';
 import GlanceView from './components/os/GlanceView';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const variants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? '100%' : '-100%',
+    opacity: 0,
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    zIndex: 0,
+    x: direction < 0 ? '100%' : '-100%',
+    opacity: 0,
+  }),
+};
+
+const swipeConfidenceThreshold = 10000;
+const swipePower = (offset: number, velocity: number) => {
+  return Math.abs(offset) * velocity;
+};
+
 const MainViewport: React.FC = () => {
-  const { osState } = useOS();
+  const { osState, setCurrentView } = useOS();
   const { ui: { aiPanelState, isControlCenterOpen, currentView } } = osState;
   const isAiPanelOpen = aiPanelState === 'panel';
+  
+  // We track the page index (0 for desktop, 1 for glance) and the direction of navigation
+  const [[page, direction], setPage] = useState([currentView === 'desktop' ? 0 : 1, 0]);
+
+  const paginate = (newDirection: number) => {
+    // This is called on swipe. The direction is relative to current page.
+    // newDirection > 0 means swipe left (to next page)
+    // newDirection < 0 means swipe right (to previous page)
+    if (page === 0 && newDirection > 0) {
+        setCurrentView('glance');
+    } else if (page === 1 && newDirection < 0) {
+        setCurrentView('desktop');
+    }
+  };
+
+  // This effect synchronizes the local animation state with the global OS state.
+  // This is crucial for the Dock button to trigger the animation correctly.
+  useEffect(() => {
+      const newPage = currentView === 'desktop' ? 0 : 1;
+      if (newPage !== page) {
+          // If the page has changed, determine the direction for the animation.
+          setPage([newPage, newPage > page ? 1 : -1]);
+      }
+  }, [currentView, page]);
 
   return (
     <motion.div
@@ -20,19 +67,48 @@ const MainViewport: React.FC = () => {
       animate={{ paddingBottom: isAiPanelOpen ? '45vh' : '6rem' }}
       transition={{ type: 'spring', damping: 30, stiffness: 200 }}
     >
-      <main className="absolute inset-0 bg-transparent">
-        {currentView === 'desktop' ? <Desktop /> : <GlanceView />}
-        
-        <AnimatePresence>
-          {osState.ui.viewingAssetId && <WindowManager />}
+      <div className="absolute inset-0 bg-transparent">
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={page}
+            className="absolute inset-0"
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 300, damping: 30 },
+              opacity: { duration: 0.2 }
+            }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.5}
+            onDragEnd={(e, { offset, velocity }) => {
+              const swipe = swipePower(offset.x, velocity.x);
+
+              if (swipe < -swipeConfidenceThreshold) {
+                paginate(1); // Swipe left, go to next page
+              } else if (swipe > swipeConfidenceThreshold) {
+                paginate(-1); // Swipe right, go to previous page
+              }
+            }}
+          >
+            {page === 0 ? <Desktop /> : <GlanceView />}
+          </motion.div>
         </AnimatePresence>
-        <AnimatePresence>
-          {isControlCenterOpen && <ControlCenter />}
-        </AnimatePresence>
-      </main>
+      </div>
+      
+      {/* Modals are rendered on top of the swipeable view container */}
+      <AnimatePresence>
+        {osState.ui.viewingAssetId && <WindowManager />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isControlCenterOpen && <ControlCenter />}
+      </AnimatePresence>
     </motion.div>
   );
-}
+};
 
 
 const SerendipityOS: React.FC = () => {

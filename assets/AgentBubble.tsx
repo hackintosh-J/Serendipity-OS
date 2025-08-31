@@ -2,7 +2,7 @@ import React from 'react';
 import { ActiveAssetInstance } from '../types';
 import { useOS } from '../contexts/OSContext';
 import { astService } from '../services/astService';
-import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon } from './icons';
+import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon } from './icons';
 import { motion } from 'framer-motion';
 
 interface AgentBubbleProps {
@@ -49,8 +49,8 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
   }
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent click from triggering when a button inside is clicked
-    if ((e.target as HTMLElement).closest('button')) {
+    // Prevent click from triggering when an interactive element inside is clicked
+    if ((e.target as HTMLElement).closest('button, input, a')) {
         return;
     }
     viewAsset(asset.id);
@@ -64,7 +64,15 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
     switch(asset.agentId) {
         case 'agent.system.memo': {
             const content = asset.state.content || '';
-            return <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words overflow-hidden">{content.substring(0, 200)}{content.length > 200 ? '...' : ''}</p>;
+            const lines = content.split('\n').filter(line => line.trim() !== '');
+            const previewText = lines.slice(0, 4).join('\n');
+            const hasMore = lines.length > 4 || previewText.length < content.length;
+            
+            if (!previewText) {
+                 return <p className="text-sm text-muted-foreground italic">空备忘录</p>;
+            }
+
+            return <p className="text-sm text-card-foreground whitespace-pre-wrap break-words overflow-hidden">{previewText}{hasMore ? '...' : ''}</p>;
         }
         case 'agent.system.browser':
              return <p className="text-sm text-muted-foreground italic">一个安全的沙盒化浏览器。</p>;
@@ -93,12 +101,69 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
                     <p className="text-lg">一个标准的计算器。</p>
                 </div>
             );
-        case 'agent.system.calendar':
-            return <p className="text-sm text-muted-foreground italic">管理您的日程和事件。</p>;
+        case 'agent.system.calendar': {
+            const { events } = asset.state;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const upcomingEvents = Object.entries(events)
+                .flatMap(([dateStr, dateEvents]: [string, any[]]) => {
+                    const eventDate = new Date(dateStr);
+                    eventDate.setDate(eventDate.getDate() + 1); // Adjust for timezone issues if any
+                    if (eventDate >= today) {
+                        return dateEvents.map(event => ({ ...event, date: new Date(dateStr) }));
+                    }
+                    return [];
+                })
+                .sort((a, b) => a.date.getTime() + a.time.localeCompare(b.time) - (b.date.getTime() + b.time.localeCompare(a.time)))
+                .slice(0, 3);
+            
+            if (upcomingEvents.length === 0) {
+                 return <div className="text-center text-muted-foreground"><CalendarIcon className="w-10 h-10 mx-auto mb-2 text-primary" /><p>无 upcoming 日程</p></div>;
+            }
+
+            return (
+                <div className="w-full space-y-2">
+                    {upcomingEvents.map((event, index) => (
+                        <div key={index} className="flex items-center text-sm">
+                            <div className="font-semibold text-primary w-20 flex-shrink-0">{new Date(event.date).toLocaleDateString('zh-CN', {month: 'short', day: 'numeric'})} {event.time}</div>
+                            <div className="text-muted-foreground truncate">{event.text}</div>
+                        </div>
+                    ))}
+                </div>
+            )
+        }
         case 'agent.system.todo': {
             const todos = asset.state.todos || [];
-            const remaining = todos.filter((t: any) => !t.completed).length;
-            return <p className="text-sm text-muted-foreground">{remaining > 0 ? `还有 ${remaining} 项待办` : '所有任务已完成！'}</p>;
+            const handleToggle = (e: React.ChangeEvent<HTMLInputElement>, todoId: string) => {
+                e.stopPropagation();
+                const updatedTodos = todos.map((t: any) => t.id === todoId ? {...t, completed: !t.completed} : t);
+                dispatch({ type: 'UPDATE_ASSET_STATE', payload: { assetId: asset.id, newState: { ...asset.state, todos: updatedTodos } } });
+            }
+
+            if (todos.length === 0) {
+                return <div className="text-center text-muted-foreground"><CheckSquareIcon className="w-10 h-10 mx-auto mb-2 text-primary" /><p>所有任务已完成！</p></div>;
+            }
+
+            return (
+                <div className="w-full space-y-2">
+                    {todos.slice(0, 4).map((todo: any) => (
+                        <div key={todo.id} className="flex items-center">
+                            <input
+                                type="checkbox"
+                                checked={todo.completed}
+                                onChange={(e) => handleToggle(e, todo.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer bg-secondary flex-shrink-0"
+                            />
+                            <span className={`ml-3 text-sm text-card-foreground truncate ${todo.completed ? 'line-through text-muted-foreground' : ''}`}>
+                                {todo.text}
+                            </span>
+                        </div>
+                    ))}
+                    {todos.length > 4 && <p className="text-xs text-muted-foreground text-center mt-2">还有 {todos.length - 4} 项...</p>}
+                </div>
+            )
         }
         case 'agent.system.insight': {
             return <p className="text-sm text-muted-foreground italic">{asset.state.content || 'AI正在为您准备惊喜...'}</p>;
@@ -154,7 +219,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
         </div>
       </header>
 
-      <main className={`flex-grow min-h-0 flex items-center ${isMinimalPreview ? 'justify-center' : ''} overflow-hidden pointer-events-none`}>
+      <main className={`flex-grow min-h-0 flex items-center ${isMinimalPreview ? 'justify-center' : ''} overflow-hidden`}>
         <CardPreview />
       </main>
       

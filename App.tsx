@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { OSProvider, useOS } from './contexts/OSContext';
 import SystemBar from './components/os/SystemBar';
@@ -35,8 +36,7 @@ const swipePower = (offset: number, velocity: number) => {
 
 const MainViewport: React.FC = () => {
   const { osState, setCurrentView } = useOS();
-  const { ui: { aiPanelState, isControlCenterOpen, currentView } } = osState;
-  const isAiPanelOpen = aiPanelState === 'panel';
+  const { ui: { isControlCenterOpen, currentView } } = osState;
   
   // We track the page index (0 for desktop, 1 for glance) and the direction of navigation
   const [[page, direction], setPage] = useState([currentView === 'desktop' ? 0 : 1, 0]);
@@ -63,10 +63,8 @@ const MainViewport: React.FC = () => {
   }, [currentView, page]);
 
   return (
-    <motion.div
+    <div
       className="flex-grow relative overflow-hidden"
-      animate={{ paddingBottom: isAiPanelOpen ? '55vh' : '6rem' }}
-      transition={{ type: 'spring', damping: 30, stiffness: 200 }}
     >
       <div className="absolute inset-0 bg-transparent">
         <AnimatePresence initial={false} custom={direction}>
@@ -108,7 +106,7 @@ const MainViewport: React.FC = () => {
       <AnimatePresence>
         {isControlCenterOpen && <ControlCenter />}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };
 

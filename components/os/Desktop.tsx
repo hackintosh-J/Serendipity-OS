@@ -1,5 +1,6 @@
 
 
+
 import React, { useMemo } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
@@ -7,16 +8,19 @@ import { motion } from 'framer-motion';
 
 const Desktop: React.FC = () => {
     const { osState } = useOS();
-    const { activeAssets, desktopAssetOrder, installedAgents } = osState;
+    const { activeAssets, desktopAssetOrder, installedAgents, ui: { aiPanelState } } = osState;
+    const isAiPanelOpen = aiPanelState === 'panel';
 
     const orderedAssets = useMemo(() => {
         return desktopAssetOrder.map(id => activeAssets[id]).filter(Boolean);
     }, [desktopAssetOrder, activeAssets]);
 
     return (
-        <div 
-            className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6"
+        <motion.div
+            className="h-full w-full overflow-y-auto overscroll-behavior-y-contain px-4 sm:px-6 pt-4 sm:pt-6"
             style={{ touchAction: 'pan-y', willChange: 'transform' }}
+            animate={{ paddingBottom: isAiPanelOpen ? 'calc(55vh + 1.5rem)' : '7rem' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 200 }}
         >
             <motion.div
                 layout
@@ -43,7 +47,7 @@ const Desktop: React.FC = () => {
                     )
                 })}
             </motion.div>
-        </div>
+        </motion.div>
     );
 };
 

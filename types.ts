@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 // The state for a single Active Asset (AA) instance
@@ -91,4 +92,5 @@ export interface AgentComponentProps {
     updateState: (newState: any) => void;
     close: () => void;
     dispatch: React.Dispatch<OSAction>;
+    osState?: OSState; // Added to allow agents to read global state
 }

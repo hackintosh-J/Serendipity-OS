@@ -35,10 +35,10 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
   const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
 
-  const handleExport = (e: React.MouseEvent) => {
+  const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (agentDef) {
-        astService.exportAsset(asset, agentDef);
+        await astService.exportAsset(asset, agentDef);
     }
   }
 

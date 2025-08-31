@@ -1,8 +1,9 @@
 
+
 import React from 'react';
 import { OSState, ModalType, AgentDefinition, AIPanelState, AgentComponentProps } from './types';
-import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent } from './components/agents/index';
-import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon, DownloadIcon } from './assets/icons';
+import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent, MediaPlayerAgent, CameraAgent, PhotosAgent } from './components/agents/index';
+import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon, DownloadIcon, PlayIcon, CameraIcon, ImageIcon } from './assets/icons';
 import Button from './components/shared/Button';
 
 // --- AI Insight Agent Component ---
@@ -120,6 +121,37 @@ const todoAgent: AgentDefinition = {
     size: 'medium',
 };
 
+const mediaPlayerAgent: AgentDefinition = {
+    id: 'agent.system.media_player',
+    name: '媒体播放器',
+    description: '播放本地音频和视频文件。',
+    icon: PlayIcon,
+    component: MediaPlayerAgent,
+    defaultState: { storageKey: null, fileName: null, fileType: null },
+    size: 'medium',
+};
+
+const cameraAgent: AgentDefinition = {
+    id: 'agent.system.camera',
+    name: 'AI相机',
+    description: '捕捉照片并保存到您的相册。',
+    icon: CameraIcon,
+    component: CameraAgent,
+    defaultState: {},
+    size: 'medium',
+};
+
+const photosAgent: AgentDefinition = {
+    id: 'agent.system.photos',
+    name: '智能相册',
+    description: '存储和浏览您拍摄的照片。',
+    icon: ImageIcon,
+    component: PhotosAgent,
+    defaultState: { photos: [] },
+    size: 'full',
+};
+
+
 const insightAgent: AgentDefinition = {
     id: 'agent.system.insight',
     name: 'AI洞察',
@@ -138,6 +170,9 @@ export const PRE_INSTALLED_AGENTS: { [key: string]: AgentDefinition } = {
     [calculatorAgent.id]: calculatorAgent,
     [calendarAgent.id]: calendarAgent,
     [todoAgent.id]: todoAgent,
+    [mediaPlayerAgent.id]: mediaPlayerAgent,
+    [cameraAgent.id]: cameraAgent,
+    [photosAgent.id]: photosAgent,
     [helpAgent.id]: helpAgent,
     [insightAgent.id]: insightAgent
 };

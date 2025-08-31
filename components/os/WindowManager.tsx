@@ -1,6 +1,7 @@
 
 
 
+
 import React from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentWindow from './AgentWindow';
@@ -27,7 +28,7 @@ const WindowManager: React.FC = () => {
       dispatch({ type: 'UPDATE_ASSET_STATE', payload: { assetId: asset.id, newState }});
   }
 
-  return <AgentWindow asset={asset} agent={agent} updateState={updateState} close={closeAssetView} dispatch={dispatch} />;
+  return <AgentWindow asset={asset} agent={agent} updateState={updateState} close={closeAssetView} dispatch={dispatch} osState={osState} />;
 };
 
 export default WindowManager;

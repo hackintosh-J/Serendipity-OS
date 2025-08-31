@@ -47,5 +47,8 @@ export const CheckSquareIcon = createIcon(<><polyline points="9 11 12 14 22 4"><
 export const ChevronLeftIcon = createIcon(<polyline points="15 18 9 12 15 6"></polyline>);
 export const ChevronRightIcon = createIcon(<polyline points="9 18 15 12 9 6"></polyline>);
 export const GridIcon = createIcon(<><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></>);
+export const PlayIcon = createIcon(<><polygon points="5 3 19 12 5 21 5 3"></polygon></>);
+export const CameraIcon = createIcon(<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></>);
+export const ImageIcon = createIcon(<><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></>);
 
 export default createIcon;

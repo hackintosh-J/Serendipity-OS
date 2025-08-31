@@ -194,14 +194,14 @@ const AIPanel: React.FC = () => {
         >
             {/* Chat History Panel */}
             <div className="w-full max-w-2xl flex-grow mb-4 overflow-hidden">
-                <div className="w-full h-full overflow-y-auto p-4 space-y-4 rounded-2xl bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
+                <div className="w-full h-full overflow-y-auto p-4 space-y-4 rounded-2xl bg-card-glass backdrop-blur-xl shadow-2xl border border-border/50">
                     {messages.map((msg) => (
                         <div key={msg.id} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-                            {msg.sender === 'ai' && <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white flex-shrink-0"><SparklesIcon className="w-5 h-5" /></div>}
-                            <div className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${msg.sender === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-none shadow-sm'}`}>
+                            {msg.sender === 'ai' && <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground flex-shrink-0"><SparklesIcon className="w-5 h-5" /></div>}
+                            <div className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${msg.sender === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground rounded-bl-none shadow-sm'}`}>
                                 {msg.isThinking && (
-                                    <div className="mb-2 border-b border-gray-300 dark:border-gray-600 pb-2">
-                                        <button onClick={() => setIsThinkingCollapsed(prev => !prev)} className="flex items-center justify-between w-full text-xs text-gray-500 dark:text-gray-400 font-semibold">
+                                    <div className="mb-2 border-b border-border pb-2">
+                                        <button onClick={() => setIsThinkingCollapsed(prev => !prev)} className="flex items-center justify-between w-full text-xs text-muted-foreground font-semibold">
                                             思考中...
                                             <ChevronDownIcon className={`w-4 h-4 transition-transform ${!isThinkingCollapsed && 'rotate-180'}`} />
                                         </button>
@@ -211,7 +211,7 @@ const AIPanel: React.FC = () => {
                                                     initial={{ opacity: 0, height: 0 }}
                                                     animate={{ opacity: 1, height: 'auto' }}
                                                     exit={{ opacity: 0, height: 0 }}
-                                                    className="text-xs text-gray-600 dark:text-gray-300 mt-2 whitespace-pre-wrap"
+                                                    className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap"
                                                 >
                                                     {msg.thinkingText}
                                                 </motion.p>
@@ -231,9 +231,9 @@ const AIPanel: React.FC = () => {
             <motion.div
                 layoutId="ai-input-bar"
                 transition={{ type: "spring", damping: 30, stiffness: 250 }}
-                className="w-full max-w-2xl h-20 bg-white/30 dark:bg-gray-900/30 backdrop-blur-xl rounded-3xl shadow-lg flex items-center p-3 flex-shrink-0"
+                className="w-full max-w-2xl h-20 bg-glass backdrop-blur-xl rounded-3xl shadow-lg flex items-center p-3 flex-shrink-0"
             >
-                 <button onClick={() => setAIPanelState('closed')} className="w-14 h-14 mr-2 rounded-2xl bg-gray-200/50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:bg-gray-300/70 dark:hover:bg-gray-600/70 transition-colors flex-shrink-0 flex items-center justify-center">
+                 <button onClick={() => setAIPanelState('closed')} className="w-14 h-14 mr-2 rounded-2xl bg-secondary/50 text-secondary-foreground hover:bg-secondary/70 transition-colors flex-shrink-0 flex items-center justify-center">
                     <ChevronDownIcon className="w-6 h-6" />
                 </button>
                 <input
@@ -243,13 +243,13 @@ const AIPanel: React.FC = () => {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={isLoading ? "AI正在思考..." : "与我交谈或下达指令..."}
-                    className="w-full h-full text-lg bg-transparent text-gray-800 dark:text-gray-100 border-none focus:ring-0 placeholder-gray-500 dark:placeholder-gray-400 px-3"
+                    className="w-full h-full text-lg bg-transparent text-foreground border-none focus:ring-0 placeholder:text-muted-foreground px-3"
                     disabled={isLoading}
                 />
                 <button 
                     onClick={handleSend} 
                     disabled={input.trim() === '' || isLoading} 
-                    className="w-14 h-14 ml-2 rounded-2xl bg-purple-600 text-white disabled:bg-gray-300 dark:disabled:bg-gray-600 transition-colors flex-shrink-0 flex items-center justify-center"
+                    className="w-14 h-14 ml-2 rounded-2xl bg-primary text-primary-foreground disabled:bg-muted transition-colors flex-shrink-0 flex items-center justify-center"
                     aria-label="发送消息"
                 >
                     <SendIcon className="w-6 h-6"/>

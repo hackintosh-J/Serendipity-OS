@@ -24,9 +24,9 @@ const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, update
     };
 
     // FIX: Replaced JSX with React.createElement to compile in a .ts file.
-    return React.createElement('div', { className: "p-4 bg-white dark:bg-gray-800 rounded-lg -m-4" },
-        React.createElement('h2', { className: "text-xl font-bold text-gray-900 dark:text-gray-100 mb-4" }, instance.name),
-        React.createElement('p', { className: "text-gray-700 dark:text-gray-300 leading-relaxed mb-6 whitespace-pre-wrap" }, content),
+    return React.createElement('div', { className: "p-4 bg-transparent rounded-lg -m-4 text-card-foreground" },
+        React.createElement('h2', { className: "text-xl font-bold mb-4" }, instance.name),
+        React.createElement('p', { className: "leading-relaxed mb-6 whitespace-pre-wrap" }, content),
         generated_image && React.createElement('div', { className: "space-y-4" },
             React.createElement('img', { src: `data:image/jpeg;base64,${generated_image}`, alt: "AI-generated content", className: "w-full rounded-lg shadow-md" }),
             React.createElement('div', { className: 'flex space-x-4' },
@@ -34,7 +34,7 @@ const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, update
                 React.createElement(Button, { onClick: handleArchive, variant: 'secondary', icon: DownloadIcon, children: "存档" })
             )
         ),
-        state.wallpaper_feedback && React.createElement('p', { className: "text-sm text-green-600 dark:text-green-400 mt-4 font-semibold" }, state.wallpaper_feedback)
+        state.wallpaper_feedback && React.createElement('p', { className: "text-sm text-primary mt-4 font-semibold" }, state.wallpaper_feedback)
     );
 };
 

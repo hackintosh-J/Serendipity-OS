@@ -53,7 +53,7 @@ const Settings: React.FC = () => {
     <Modal title="系统设置" icon={SettingsIcon} onClose={() => setActiveModal(ModalType.NONE)}>
       <div className="p-6 space-y-6">
         <div>
-          <label htmlFor="userName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="userName" className="block text-sm font-medium text-foreground mb-1">
             用户名
           </label>
           <Input
@@ -66,7 +66,7 @@ const Settings: React.FC = () => {
         </div>
 
         <div>
-            <label htmlFor="geminiApiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="geminiApiKey" className="block text-sm font-medium text-foreground mb-1">
                 Gemini API 密钥
             </label>
             <Input
@@ -76,14 +76,14 @@ const Settings: React.FC = () => {
                 onChange={(e) => setGeminiApiKey(e.target.value)}
                 placeholder="在此输入您的 API 密钥"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
                 您的密钥将仅保存在此浏览器的本地存储中，不会被发送到任何服务器。
             </p>
         </div>
         
-        <div className="border-t dark:border-gray-600 pt-6 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">系统状态管理</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">您可以将整个操作系统的当前状态（包括所有资产和设置）导出为一个 `.ast` 文件进行备份，或从文件中恢复。</p>
+        <div className="border-t border-border pt-6 space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">系统状态管理</h3>
+            <p className="text-sm text-muted-foreground">您可以将整个操作系统的当前状态（包括所有资产和设置）导出为一个 `.ast` 文件进行备份，或从文件中恢复。</p>
             <div className="flex space-x-4">
                 <Button onClick={handleExport} icon={DownloadIcon}>导出系统状态</Button>
                 <Button onClick={handleImportClick} icon={UploadIcon} variant="secondary">导入系统状态</Button>
@@ -91,7 +91,7 @@ const Settings: React.FC = () => {
             </div>
         </div>
       </div>
-      <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-600 flex justify-end">
+      <div className="p-4 bg-muted/50 border-t border-border flex justify-end">
         <Button onClick={handleSave}>保存设置</Button>
       </div>
     </Modal>

@@ -59,15 +59,15 @@ const CalendarAgent: React.FC<AgentComponentProps> = ({ instance, updateState })
   const today = new Date();
   
   return (
-    <div className="w-full h-full flex flex-col md:flex-row -m-4 bg-gray-50 dark:bg-gray-900">
+    <div className="w-full h-full flex flex-col md:flex-row -m-4 bg-background">
       {/* Calendar View */}
       <div className="w-full md:w-2/3 p-4 flex flex-col">
         <header className="flex items-center justify-between mb-4">
-          <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-200"><ChevronLeftIcon className="w-6 h-6" /></button>
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">{year}年 {month + 1}月</h2>
-          <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-200"><ChevronRightIcon className="w-6 h-6" /></button>
+          <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-secondary text-foreground"><ChevronLeftIcon className="w-6 h-6" /></button>
+          <h2 className="text-xl font-semibold text-foreground">{year}年 {month + 1}月</h2>
+          <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-secondary text-foreground"><ChevronRightIcon className="w-6 h-6" /></button>
         </header>
-        <div className="grid grid-cols-7 gap-1 text-center text-sm text-gray-500 dark:text-gray-400 mb-2">
+        <div className="grid grid-cols-7 gap-1 text-center text-sm text-muted-foreground mb-2">
           {['日', '一', '二', '三', '四', '五', '六'].map(day => <div key={day}>{day}</div>)}
         </div>
         <div className="grid grid-cols-7 gap-1 flex-grow">
@@ -83,13 +83,13 @@ const CalendarAgent: React.FC<AgentComponentProps> = ({ instance, updateState })
               <div
                 key={day}
                 onClick={() => setSelectedDate(date)}
-                className={`p-2 h-16 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-colors border-2 dark:text-gray-200 ${
-                  isSelected ? 'bg-blue-500 border-blue-600 text-white' : 
-                  isToday ? 'bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-800/50' : 'border-transparent hover:bg-gray-200 dark:hover:bg-gray-700/50'
+                className={`p-2 h-16 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-colors border-2 text-foreground ${
+                  isSelected ? 'bg-primary border-primary/80 text-primary-foreground' : 
+                  isToday ? 'bg-primary/20 border-primary/30' : 'border-transparent hover:bg-secondary/50'
                 }`}
               >
                 <span className="font-medium">{day + 1}</span>
-                {hasEvents && <div className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-blue-500'}`}></div>}
+                {hasEvents && <div className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-primary-foreground' : 'bg-primary'}`}></div>}
               </div>
             );
           })}
@@ -97,42 +97,42 @@ const CalendarAgent: React.FC<AgentComponentProps> = ({ instance, updateState })
       </div>
       
       {/* Event Details View */}
-      <div className="w-full md:w-1/3 p-4 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b dark:border-gray-600">
+      <div className="w-full md:w-1/3 p-4 bg-card border-l border-border flex flex-col">
+        <h3 className="text-lg font-semibold text-card-foreground mb-4 pb-2 border-b border-border">
             {selectedDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
         </h3>
         <div className="flex-grow overflow-y-auto mb-4">
             {eventsForSelectedDay.length > 0 ? (
                 <ul className="space-y-3">
                     {eventsForSelectedDay.map((event: any, index: number) => (
-                        <li key={index} className="flex items-start p-2 rounded-md bg-gray-100 dark:bg-gray-700/60">
-                           <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-16">{event.time}</span>
-                           <p className="flex-grow text-sm text-gray-700 dark:text-gray-300">{event.text}</p>
-                           <button onClick={() => handleDeleteEvent(index)} className="ml-2 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4" /></button>
+                        <li key={index} className="flex items-start p-2 rounded-md bg-secondary/60">
+                           <span className="text-sm font-semibold text-secondary-foreground w-16">{event.time}</span>
+                           <p className="flex-grow text-sm text-muted-foreground">{event.text}</p>
+                           <button onClick={() => handleDeleteEvent(index)} className="ml-2 text-muted-foreground hover:text-destructive"><TrashIcon className="w-4 h-4" /></button>
                         </li>
                     ))}
                 </ul>
             ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center pt-8">该日无日程。</p>
+                <p className="text-sm text-muted-foreground text-center pt-8">该日无日程。</p>
             )}
         </div>
          <form onSubmit={handleAddEvent} className="flex-shrink-0">
-            <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-2">添加新日程</h4>
+            <h4 className="text-md font-semibold text-card-foreground mb-2">添加新日程</h4>
              <input
                 type="text"
                 value={newEventText}
                 onChange={(e) => setNewEventText(e.target.value)}
                 placeholder="日程内容..."
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm mb-2 dark:text-gray-200"
+                className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm mb-2 text-card-foreground"
             />
             <div className="flex items-center gap-2">
                  <input
                     type="time"
                     value={newEventTime}
                     onChange={(e) => setNewEventTime(e.target.value)}
-                    className="flex-shrink-0 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:text-gray-200"
+                    className="flex-shrink-0 px-3 py-2 bg-card border border-border rounded-lg text-sm text-card-foreground"
                 />
-                <button type="submit" className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+                <button type="submit" className="w-full flex items-center justify-center px-3 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-semibold hover:bg-accent/90 transition-colors">
                     <PlusIcon className="w-4 h-4 mr-1" />
                     添加
                 </button>

@@ -4,8 +4,51 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Serendipity OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      :root {
+        --color-background: 248 247 244; /* #F8F7F4 */
+        --color-foreground: 26 32 44; /* #1A202C */
+        --color-card: 255 255 255;
+        --color-card-foreground: 26 32 44;
+        --color-primary: 0 128 128; /* teal */
+        --color-primary-foreground: 255 255 255;
+        --color-secondary: 226 232 240; /* gray-200 */
+        --color-secondary-foreground: 26 32 44;
+        --color-muted: 241 245 249; /* gray-100 */
+        --color-muted-foreground: 100 116 139; /* gray-500 */
+        --color-accent: 96 165 250; /* blue-400 */
+        --color-accent-foreground: 255 255 255;
+        --color-destructive: 220 38 38; /* red-600 */
+        --color-border: 226 232 240;
+        --color-input: 226 232 240;
+        --color-ring: 0 128 128;
+        --opacity-card: 0.8;
+        --opacity-glass: 0.5;
+      }
+      .dark {
+        --color-background: 26 32 44; /* #1A202C */
+        --color-foreground: 226 232 240; /* #E2E8F0 */
+        --color-card: 45 55 72; /* #2D3748 */
+        --color-card-foreground: 226 232 240;
+        --color-primary: 0 255 255; /* cyan */
+        --color-primary-foreground: 26 32 44;
+        --color-secondary: 55 65 81; /* gray-700 */
+        --color-secondary-foreground: 226 232 240;
+        --color-muted: 55 65 81;
+        --color-muted-foreground: 156 163 175; /* gray-400 */
+        --color-accent: 59 130 246; /* blue-500 */
+        --color-accent-foreground: 255 255 255;
+        --color-destructive: 239 68 68; /* red-500 */
+        --color-border: 55 65 81;
+        --color-input: 55 65 81;
+        --color-ring: 0 255 255;
+        --opacity-card: 0.8;
+        --opacity-glass: 0.3;
+      }
       html, body, #root {
         height: 100%;
         margin: 0;
@@ -13,6 +56,7 @@
         overflow: hidden; /* Prevent any unwanted scrollbars on the root elements */
       }
       body {
+        font-family: 'Inter', sans-serif;
         /* Prevent the user from selecting text, making it feel more like a native app */
         -webkit-user-select: none; /* Safari */
         -ms-user-select: none; /* IE 10 and IE 11 */
@@ -29,6 +73,37 @@
         user-select: auto;
       }
     </style>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              background: 'rgb(var(--color-background) / <alpha-value>)',
+              foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
+              card: 'rgb(var(--color-card) / <alpha-value>)',
+              'card-foreground': 'rgb(var(--color-card-foreground) / <alpha-value>)',
+              primary: 'rgb(var(--color-primary) / <alpha-value>)',
+              'primary-foreground': 'rgb(var(--color-primary-foreground) / <alpha-value>)',
+              secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
+              'secondary-foreground': 'rgb(var(--color-secondary-foreground) / <alpha-value>)',
+              muted: 'rgb(var(--color-muted) / <alpha-value>)',
+              'muted-foreground': 'rgb(var(--color-muted-foreground) / <alpha-value>)',
+              accent: 'rgb(var(--color-accent) / <alpha-value>)',
+              'accent-foreground': 'rgb(var(--color-accent-foreground) / <alpha-value>)',
+              destructive: 'rgb(var(--color-destructive) / <alpha-value>)',
+              border: 'rgb(var(--color-border) / <alpha-value>)',
+              input: 'rgb(var(--color-input) / <alpha-value>)',
+              ring: 'rgb(var(--color-ring) / <alpha-value>)',
+            },
+            backgroundColor: {
+                glass: 'rgb(var(--color-card) / var(--opacity-glass))',
+                'card-glass': 'rgb(var(--color-card) / var(--opacity-card))',
+            }
+          }
+        }
+      }
+    </script>
     <script type="importmap">
 {
   "imports": {
@@ -44,7 +119,7 @@
 }
 </script>
 </head>
-  <body class="bg-gray-100 dark:bg-black">
+  <body class="bg-background text-foreground">
     <div id="root"></div>
 
     <script type="module" src="/index.tsx"></script>

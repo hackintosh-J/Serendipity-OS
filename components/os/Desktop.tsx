@@ -122,14 +122,14 @@ const Desktop: React.FC = () => {
         style={{ backgroundImage: settings.wallpaper ? `url(${settings.wallpaper})` : 'none' }}
     >
       <div 
-        className="h-full w-full bg-gradient-to-br from-rose-100/80 via-purple-100/80 to-indigo-100/80 dark:from-gray-900/80 dark:via-purple-900/40 dark:to-indigo-900/80 relative overflow-hidden"
+        className="h-full w-full bg-background/80 relative overflow-hidden"
       >
         <motion.div 
             className="absolute top-0 left-0 right-0 flex justify-center pt-4 z-0 pointer-events-none"
             style={{ opacity: indicatorOpacity, scale: indicatorScale }}
         >
-            <div className="w-10 h-10 bg-white/50 dark:bg-gray-800/50 rounded-full shadow-lg flex items-center justify-center">
-                <ChevronDownIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+            <div className="w-10 h-10 bg-glass rounded-full shadow-lg flex items-center justify-center">
+                <ChevronDownIcon className="w-6 h-6 text-muted-foreground" />
             </div>
         </motion.div>
         
@@ -158,8 +158,8 @@ const Desktop: React.FC = () => {
                   </AnimatePresence>
                   {sortedAssets.length === 0 && (
                       <div className="text-center py-20 col-span-2">
-                          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">空空如也</h2>
-                          <p className="text-gray-500 dark:text-gray-400 mt-2">点击下方的 AI 图标开始创建你的第一个智能资产吧！</p>
+                          <h2 className="text-xl font-semibold text-foreground">空空如也</h2>
+                          <p className="text-muted-foreground mt-2">点击下方的 AI 图标开始创建你的第一个智能资产吧！</p>
                       </div>
                   )}
               </motion.div>

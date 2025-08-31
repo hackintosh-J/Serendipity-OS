@@ -51,20 +51,20 @@ const TodoAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => 
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
-                            className="flex items-center p-3 bg-white/80 dark:bg-gray-800/70 rounded-lg shadow-sm"
+                            className="flex items-center p-3 bg-card-glass rounded-lg shadow-sm"
                         >
                             <input
                                 type="checkbox"
                                 checked={todo.completed}
                                 onChange={() => handleToggleTodo(todo.id)}
-                                className="h-5 w-5 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 cursor-pointer bg-gray-100 dark:bg-gray-700"
+                                className="h-5 w-5 rounded border-border text-primary focus:ring-primary cursor-pointer bg-secondary"
                             />
-                            <span className={`flex-grow mx-3 text-gray-800 dark:text-gray-200 break-words ${todo.completed ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
+                            <span className={`flex-grow mx-3 text-foreground break-words ${todo.completed ? 'line-through text-muted-foreground' : ''}`}>
                                 {todo.text}
                             </span>
                             <button 
                                 onClick={() => handleDeleteTodo(todo.id)}
-                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                className="text-muted-foreground hover:text-destructive transition-colors"
                                 aria-label={`删除待办事项 ${todo.text}`}
                             >
                                 <TrashIcon className="w-4 h-4"/>
@@ -75,20 +75,20 @@ const TodoAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => 
                 </ul>
                 {todos.length === 0 && (
                     <div className="text-center py-10">
-                        <p className="text-gray-500 dark:text-gray-400">列表为空，请添加新的待办事项。</p>
+                        <p className="text-muted-foreground">列表为空，请添加新的待办事项。</p>
                     </div>
                 )}
             </div>
-            <form onSubmit={handleAddTodo} className="flex-shrink-0 p-4 border-t border-gray-200/80 dark:border-gray-700/80 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+            <form onSubmit={handleAddTodo} className="flex-shrink-0 p-4 border-t border-border bg-card/50 backdrop-blur-sm">
                  <div className="flex items-center gap-3">
                     <input
                         type="text"
                         value={newTodoText}
                         onChange={(e) => setNewTodoText(e.target.value)}
                         placeholder="添加新的待办事项..."
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
-                    <button type="submit" className="flex-shrink-0 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors flex items-center">
+                    <button type="submit" className="flex-shrink-0 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center">
                         <PlusIcon className="w-4 h-4 mr-1" />
                         添加
                     </button>

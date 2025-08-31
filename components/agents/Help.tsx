@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AgentComponentProps } from '../../types';
 
@@ -50,18 +49,18 @@ const HelpAgent: React.FC<AgentComponentProps> = () => {
     const processLine = (text: string) => {
       return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/`([^`]+)`/g, '<code class="bg-gray-200 dark:bg-gray-700 rounded-sm px-1 py-0.5">$1</code>');
+        .replace(/`([^`]+)`/g, '<code class="bg-secondary text-secondary-foreground rounded-sm px-1 py-0.5">$1</code>');
     };
 
     return content.split('\n').map((line, index) => {
-      if (line.startsWith('### ')) return <h3 key={index} className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-2">{line.substring(4)}</h3>;
-      if (line.startsWith('## ')) return <h2 key={index} className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-6 mb-3 pb-2 border-b dark:border-gray-600">{line.substring(3)}</h2>;
-      if (line.startsWith('# ')) return <h1 key={index} className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2 mb-4">{line.substring(2)}</h1>;
+      if (line.startsWith('### ')) return <h3 key={index} className="text-lg font-semibold text-foreground mt-4 mb-2">{line.substring(4)}</h3>;
+      if (line.startsWith('## ')) return <h2 key={index} className="text-xl font-bold text-foreground mt-6 mb-3 pb-2 border-b border-border">{line.substring(3)}</h2>;
+      if (line.startsWith('# ')) return <h1 key={index} className="text-2xl font-bold text-foreground mt-2 mb-4">{line.substring(2)}</h1>;
       if (line.startsWith('*   ')) {
-        return <li key={index} className="ml-6 list-disc text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: processLine(line.substring(4)) }} />;
+        return <li key={index} className="ml-6 list-disc text-muted-foreground" dangerouslySetInnerHTML={{ __html: processLine(line.substring(4)) }} />;
       }
-      if (line.trim() === '---') return <hr key={index} className="my-6 dark:border-gray-600" />;
-      return <p key={index} className="text-gray-700 dark:text-gray-300 leading-relaxed my-2" dangerouslySetInnerHTML={{ __html: processLine(line) }} />;
+      if (line.trim() === '---') return <hr key={index} className="my-6 border-border" />;
+      return <p key={index} className="text-muted-foreground leading-relaxed my-2" dangerouslySetInnerHTML={{ __html: processLine(line) }} />;
     });
   };
 

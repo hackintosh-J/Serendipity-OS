@@ -25,10 +25,10 @@ const ControlCenter: React.FC = () => {
 
   const ControlButton: React.FC<{ icon: React.FC<{className?: string}>; label: string; active?: boolean; onClick?: () => void; }> = ({ icon: Icon, label, active, onClick }) => (
     <div className="flex flex-col items-center space-y-2 cursor-pointer" onClick={onClick}>
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${active ? 'bg-blue-500 text-white' : 'bg-gray-200/80 dark:bg-gray-700/80 text-gray-800 dark:text-gray-200'}`}>
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${active ? 'bg-accent text-accent-foreground' : 'bg-secondary/80 text-secondary-foreground'}`}>
             <Icon className="w-7 h-7" />
         </div>
-        <span className="text-xs text-gray-700 dark:text-gray-300">{label}</span>
+        <span className="text-xs text-foreground">{label}</span>
     </div>
   );
   
@@ -56,7 +56,7 @@ const ControlCenter: React.FC = () => {
         initial="hidden"
         animate="visible"
         exit="exit"
-        className="absolute top-4 left-4 right-4 p-6 bg-white/70 dark:bg-gray-800/70 backdrop-blur-2xl rounded-3xl shadow-2xl"
+        className="absolute top-4 left-4 right-4 p-6 bg-card-glass backdrop-blur-2xl rounded-3xl shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="grid grid-cols-4 gap-4 mb-6">
@@ -68,17 +68,17 @@ const ControlCenter: React.FC = () => {
         </div>
 
         <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">亮度</label>
+            <label className="text-sm font-medium text-foreground">亮度</label>
             <div className="relative mt-2">
-                <div className="h-2 w-full bg-gray-200/80 dark:bg-gray-600/80 rounded-full"></div>
-                <div className="h-2 w-3/4 bg-blue-500 rounded-full absolute top-0"></div>
-                <div className="w-5 h-5 bg-white rounded-full shadow-md absolute top-1/2 -translate-y-1/2" style={{left: '75%'}}></div>
+                <div className="h-2 w-full bg-secondary/80 rounded-full"></div>
+                <div className="h-2 w-3/4 bg-accent rounded-full absolute top-0"></div>
+                <div className="w-5 h-5 bg-card rounded-full shadow-md absolute top-1/2 -translate-y-1/2" style={{left: '75%'}}></div>
             </div>
         </div>
 
         <button 
             onClick={() => setControlCenterOpen(false)} 
-            className="absolute top-3 right-3 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200/80 dark:hover:bg-gray-700/80 transition-colors"
+            className="absolute top-3 right-3 p-2 rounded-full text-muted-foreground hover:bg-secondary/80 transition-colors"
             aria-label="关闭控制中心"
         >
             <XIcon className="w-5 h-5" />

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AgentComponentProps } from '../../types';
 
@@ -73,39 +72,39 @@ const CalculatorAgent: React.FC<AgentComponentProps> = ({ instance, updateState 
   const CalcButton: React.FC<{ value: string, onClick: (val: string) => void, className?: string }> = ({ value, onClick, className = '' }) => (
     <button
       onClick={() => onClick(value)}
-      className={`text-2xl font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${className}`}
+      className={`text-2xl font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all h-16 ${className}`}
     >
       {value}
     </button>
   );
 
   return (
-    <div className="w-full h-full flex flex-col p-4 bg-gray-800 text-white rounded-lg -m-4">
-      <div className="flex-grow bg-gray-900/50 rounded-lg mb-4 p-4 text-right text-5xl font-mono break-all flex items-end justify-end">
+    <div className="w-full h-full flex flex-col p-4 bg-card text-card-foreground rounded-lg -m-4">
+      <div className="flex-grow bg-background/50 rounded-lg mb-4 p-4 text-right text-5xl font-mono break-all flex items-end justify-end">
         {display}
       </div>
       <div className="grid grid-cols-4 gap-2">
-        <CalcButton value="C" onClick={handleClear} className="bg-orange-500 hover:bg-orange-600 col-span-2" />
-        <CalcButton value="." onClick={handleDecimal} className="bg-gray-600 hover:bg-gray-700" />
-        <CalcButton value="/" onClick={() => handleOperator('/')} className="bg-purple-600 hover:bg-purple-700" />
+        <CalcButton value="C" onClick={handleClear} className="bg-accent text-accent-foreground hover:bg-accent/90 col-span-2" />
+        <CalcButton value="." onClick={handleDecimal} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="/" onClick={() => handleOperator('/')} className="bg-primary text-primary-foreground hover:bg-primary/90" />
 
-        <CalcButton value="7" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="8" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="9" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="*" onClick={() => handleOperator('*')} className="bg-purple-600 hover:bg-purple-700" />
+        <CalcButton value="7" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="8" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="9" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="*" onClick={() => handleOperator('*')} className="bg-primary text-primary-foreground hover:bg-primary/90" />
 
-        <CalcButton value="4" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="5" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="6" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="-" onClick={() => handleOperator('-')} className="bg-purple-600 hover:bg-purple-700" />
+        <CalcButton value="4" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="5" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="6" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="-" onClick={() => handleOperator('-')} className="bg-primary text-primary-foreground hover:bg-primary/90" />
 
-        <CalcButton value="1" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="2" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="3" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600" />
-        <CalcButton value="+" onClick={() => handleOperator('+')} className="bg-purple-600 hover:bg-purple-700" />
+        <CalcButton value="1" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="2" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="3" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80" />
+        <CalcButton value="+" onClick={() => handleOperator('+')} className="bg-primary text-primary-foreground hover:bg-primary/90" />
         
-        <CalcButton value="0" onClick={handleInput} className="bg-gray-700 hover:bg-gray-600 col-span-2" />
-        <CalcButton value="=" onClick={handleEquals} className="bg-purple-600 hover:bg-purple-700 col-span-2" />
+        <CalcButton value="0" onClick={handleInput} className="bg-secondary text-secondary-foreground hover:bg-secondary/80 col-span-2" />
+        <CalcButton value="=" onClick={handleEquals} className="bg-primary text-primary-foreground hover:bg-primary/90 col-span-2" />
       </div>
     </div>
   );

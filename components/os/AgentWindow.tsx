@@ -29,20 +29,20 @@ const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, cl
       animate="visible"
       exit="exit"
       transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-      className="fixed inset-0 bg-gray-100 dark:bg-gray-900 z-50 flex flex-col"
+      className="fixed inset-0 bg-background z-50 flex flex-col"
       aria-modal="true"
       role="dialog"
     >
       <header 
-        className="h-14 flex-shrink-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg flex items-center justify-between px-4 border-b border-gray-200/80 dark:border-gray-700/80"
+        className="h-14 flex-shrink-0 bg-card-glass backdrop-blur-lg flex items-center justify-between px-4 border-b border-border/80"
       >
         <div className="flex items-center space-x-3">
-            {asset.agentId !== 'agent.system.clock' && <agent.icon className="w-6 h-6 text-gray-700 dark:text-gray-300" />}
-            <span className="font-semibold text-lg text-gray-800 dark:text-gray-200">{asset.name}</span>
+            {asset.agentId !== 'agent.system.clock' && <agent.icon className="w-6 h-6 text-foreground" />}
+            <span className="font-semibold text-lg text-foreground">{asset.name}</span>
         </div>
         <button 
           onClick={close} 
-          className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 transition-colors" 
+          className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" 
           title="关闭"
           aria-label="关闭视图"
         >

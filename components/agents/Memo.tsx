@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { AgentComponentProps } from '../../types';
 
@@ -23,7 +20,7 @@ const MemoAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => 
   return (
     <div className="w-full h-full flex flex-col">
       <textarea
-        className="w-full h-full p-2 bg-transparent text-gray-800 dark:text-gray-200 resize-none border-none focus:ring-0 text-base leading-relaxed"
+        className="w-full h-full p-2 bg-transparent text-foreground resize-none border-none focus:ring-0 text-base leading-relaxed"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="开始书写..."

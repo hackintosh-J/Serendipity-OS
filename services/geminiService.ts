@@ -1,5 +1,6 @@
 
 
+
 import { GoogleGenAI } from "@google/genai";
 
 const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作系统的核心AI助手。
@@ -194,7 +195,7 @@ class GeminiService {
     );
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-image-preview",
+            model: "gemini-2.0-flash-preview-image-generation",
             contents: "请根据我的资产，为我创造一个“洞察力”。",
             config: {
                 systemInstruction: finalSystemInstruction,

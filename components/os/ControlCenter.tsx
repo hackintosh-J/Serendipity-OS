@@ -20,8 +20,8 @@ const panelVariants = {
 };
 
 const ControlCenter: React.FC = () => {
-  const { osState, setControlCenterOpen, toggleTheme, triggerInsightGeneration, setActiveModal } = useOS();
-  const isDarkMode = osState.settings.theme === 'dark';
+  const { osState, setControlCenterOpen, toggleThemeMode, triggerInsightGeneration, setActiveModal } = useOS();
+  const isDarkMode = osState.settings.themeMode === 'dark';
 
   const ControlButton: React.FC<{ icon: React.FC<{className?: string}>; label: string; active?: boolean; onClick?: () => void; }> = ({ icon: Icon, label, active, onClick }) => (
     <div className="flex flex-col items-center space-y-2 cursor-pointer" onClick={onClick}>
@@ -62,7 +62,7 @@ const ControlCenter: React.FC = () => {
         <div className="grid grid-cols-4 gap-4 mb-6">
             <ControlButton icon={SparklesIcon} label="获取新洞察" onClick={handleGetInsight} />
             <ControlButton icon={ClockIcon} label="历史洞察" onClick={handleShowHistory} />
-            <ControlButton icon={isDarkMode ? SunIcon : MoonIcon} label={isDarkMode ? '浅色' : '深色'} active={isDarkMode} onClick={toggleTheme} />
+            <ControlButton icon={isDarkMode ? SunIcon : MoonIcon} label={isDarkMode ? '浅色' : '深色'} active={isDarkMode} onClick={toggleThemeMode} />
             <ControlButton icon={WifiIcon} label="Wi-Fi" active />
 
         </div>

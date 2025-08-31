@@ -6,85 +6,21 @@ import Dock from './components/os/Dock';
 import WindowManager from './components/os/WindowManager';
 import AIPanel from './components/os/AICompanion';
 import ControlCenter from './components/os/ControlCenter';
-import GlanceView from './components/os/GlanceView';
-// FIX: Removed `PanInfo` and `Transition` from import as they are causing resolution errors.
 import { motion, AnimatePresence } from 'framer-motion';
 
-// A minimal polyfill for PanInfo since it's not being exported correctly in the environment.
-// This provides type information for the properties being used (`offset`, `velocity`).
-type PanInfo = {
-  offset: { x: number, y: number },
-  velocity: { x: number, y: number },
-};
-
 const MainViewport: React.FC = () => {
-  const { osState, setCurrentView } = useOS();
-  const { ui: { aiPanelState, currentView, isControlCenterOpen } } = osState;
+  const { osState } = useOS();
+  const { ui: { aiPanelState, isControlCenterOpen } } = osState;
   const isAiPanelOpen = aiPanelState === 'panel';
-  
-  // FIX: Removed explicit `Transition` type annotation to avoid import error. Type is inferred.
-  const transition = { type: 'spring' as const, stiffness: 300, damping: 30 };
-
-  const handleDesktopPanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = 50;
-    const velocityThreshold = 200;
-    const { offset, velocity } = info;
-
-    const isHorizontalSwipe = Math.abs(offset.x) > Math.abs(offset.y);
-
-    if (isHorizontalSwipe) {
-      // Swipe Left to Glance
-      if (offset.x < -swipeThreshold && velocity.x < -velocityThreshold) {
-        setCurrentView('glance');
-      }
-    }
-  };
-
-  const handleGlancePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = 50;
-    const velocityThreshold = 200;
-    const { offset, velocity } = info;
-
-    // Swipe Right to Desktop
-    if (offset.x > swipeThreshold && velocity.x > velocityThreshold && Math.abs(offset.x) > Math.abs(offset.y)) {
-      setCurrentView('desktop');
-    }
-  };
 
   return (
     <motion.div
-      className="flex-grow relative"
+      className="flex-grow relative overflow-hidden" // Added overflow-hidden
       animate={{ paddingBottom: isAiPanelOpen ? '45vh' : '6rem' }}
       transition={{ type: 'spring', damping: 30, stiffness: 200 }}
     >
-      <main className="absolute inset-0 overflow-hidden bg-transparent">
-        <AnimatePresence initial={false}>
-          {currentView === 'desktop' ? (
-            <motion.div
-              key="desktop"
-              className="absolute inset-0"
-              initial={{ x: 0 }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={transition}
-              onPanEnd={handleDesktopPanEnd}
-            >
-              <Desktop />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="glance"
-              className="absolute inset-0"
-              initial={{ x: '100%' }}
-              animate={{ x: '0%' }}
-              exit={{ x: '100%' }}
-              transition={transition}
-              onPanEnd={handleGlancePanEnd}
-            >
-              <GlanceView />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <main className="absolute inset-0 bg-transparent">
+        <Desktop />
         
         <AnimatePresence>
           {osState.ui.viewingAssetId && <WindowManager />}
@@ -101,17 +37,6 @@ const MainViewport: React.FC = () => {
 const SerendipityOS: React.FC = () => {
   const { osState } = useOS();
 
-  useEffect(() => {
-    if (osState.isInitialized) {
-        const root = document.documentElement;
-        if (osState.settings.theme === 'dark') {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-    }
-  }, [osState.settings.theme, osState.isInitialized]);
-
   if (!osState.isInitialized) {
     return (
       <div className="w-screen h-screen flex items-center justify-center bg-background text-foreground font-sans">
@@ -127,7 +52,7 @@ const SerendipityOS: React.FC = () => {
   }
 
   return (
-    <div className="h-full w-full bg-background font-sans flex flex-col overflow-hidden">
+    <div className="h-full w-full font-sans flex flex-col overflow-hidden" style={{ background: 'var(--background-style)' }}>
       <SystemBar />
       <MainViewport />
       <div className="fixed bottom-0 left-0 right-0 z-40">

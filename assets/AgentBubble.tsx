@@ -3,16 +3,18 @@ import { ActiveAssetInstance } from '../types';
 import { useOS } from '../contexts/OSContext';
 import { astService } from '../services/astService';
 import { CloudIcon, DownloadIcon, ClockIcon, CalculatorIcon, TrashIcon } from './icons';
-import { motion } from 'framer-motion';
+import { motion, PanInfo } from 'framer-motion';
 
 interface AgentBubbleProps {
   asset: ActiveAssetInstance;
+  scale: number;
+  onDragEnd: (assetId: string, info: PanInfo) => void;
 }
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, height: 0, padding: 0, margin: 0, transition: { duration: 0.3 } },
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.5 },
 };
 
 const LiveClockPreview: React.FC = () => {
@@ -30,23 +32,9 @@ const LiveClockPreview: React.FC = () => {
     );
 };
 
-const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
+const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, scale, onDragEnd }) => {
   const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
-
-  // Simulate weather updates
-  useEffect(() => {
-    // FIX: Add guard to ensure asset.state exists before accessing its properties.
-    if (asset.agentId === 'agent.system.weather' && asset.state && asset.state.data) {
-        const thirtyMinutes = 30 * 60 * 1000;
-        const lastUpdated = new Date(asset.state.lastUpdated).getTime();
-        if (Date.now() - lastUpdated > thirtyMinutes) {
-            const newData = { ...asset.state.data, temp: asset.state.data.temp + (Math.random() - 0.5) * 2 };
-            dispatch({ type: 'UPDATE_ASSET_STATE', payload: { assetId: asset.id, newState: { ...asset.state, data: newData, lastUpdated: new Date().toISOString() } } });
-        }
-    }
-  }, [asset.agentId, asset.id, asset.state, dispatch]);
-
 
   const handleExport = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -62,12 +50,14 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
     }
   }
 
-  const handleCardClick = () => {
-    viewAsset(asset.id);
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent click from firing after a drag
+    if (e.detail > 0) {
+      viewAsset(asset.id);
+    }
   };
   
   const CardPreview: React.FC = () => {
-    // FIX: Add a defensive check for asset.state to prevent crashes from corrupted data.
     if (!asset.state) {
         return <p className="text-sm text-destructive">资产状态错误。</p>;
     }
@@ -121,7 +111,43 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
 
   if (!agentDef) return null;
   
-  const isMinimalPreview = asset.agentId === 'agent.system.clock' || asset.agentId === 'agent.system.weather';
+  const isMinimalPreview = agentDef.size === 'small';
+
+  const sizeClasses = {
+    small: 'w-48 h-32',
+    medium: 'w-80 h-48',
+    full: 'w-[480px] h-72',
+  }
+  const currentSize = sizeClasses[agentDef.size || 'medium'];
+
+  // Simplified view for when zoomed out
+  if (scale < 0.4) {
+    return (
+        <motion.div
+            layoutId={`asset-bubble-${asset.id}`}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="absolute p-2 flex flex-col items-center justify-center bg-card-glass rounded-full shadow-md"
+            style={{ 
+                left: asset.position.x, 
+                top: asset.position.y,
+                width: 80,
+                height: 80,
+                x: 0, // Reset transform so drag works correctly
+                y: 0,
+            }}
+             onClick={handleCardClick}
+             drag
+             onDragEnd={(e, info) => onDragEnd(asset.id, info)}
+             dragMomentum={false}
+        >
+            <agentDef.icon className="w-8 h-8 text-foreground" />
+            <p className="text-xs text-foreground mt-1 truncate w-full text-center">{asset.name}</p>
+        </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -131,12 +157,22 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
       animate="visible"
       exit="exit"
       transition={{ type: 'spring', duration: 0.5 }}
-      whileHover={{ scale: 1.02, y: -4, transition: { type: 'spring', duration: 0.2 } }}
-      className="bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-primary/30 h-full"
+      whileHover={{ scale: 1.02, transition: { type: 'spring', duration: 0.2 } }}
+      className={`absolute bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-primary/30 ${currentSize}`}
+      style={{ 
+        left: asset.position.x, 
+        top: asset.position.y,
+        x: 0, // Reset transform so drag works correctly
+        y: 0,
+       }}
       onClick={handleCardClick}
       aria-label={`打开 ${asset.name}`}
+      drag
+      onDragEnd={(e, info) => onDragEnd(asset.id, info)}
+      dragMomentum={false}
+      onDragStart={(e) => e.stopPropagation()} // Prevent canvas pan while dragging bubble
     >
-      <header className="flex justify-between items-start mb-3">
+      <header className="flex justify-between items-start mb-3 flex-shrink-0">
         <div className="flex items-center space-x-3 min-w-0">
           {!isMinimalPreview && (
             <div className="w-10 h-10 bg-secondary rounded-lg shadow-inner flex items-center justify-center flex-shrink-0">
@@ -163,11 +199,11 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
         </div>
       </header>
 
-      <main className={`flex-grow mb-3 min-h-[4rem] flex items-center ${isMinimalPreview ? 'justify-center' : ''}`}>
+      <main className={`flex-grow min-h-0 flex items-center ${isMinimalPreview ? 'justify-center' : ''} overflow-hidden`}>
         <CardPreview />
       </main>
       
-      <footer className="text-xs text-muted-foreground/80 mt-2 self-end">
+      <footer className="text-xs text-muted-foreground/80 mt-2 self-end flex-shrink-0">
         更新于: {new Date(asset.updatedAt).toLocaleTimeString()}
       </footer>
     </motion.div>

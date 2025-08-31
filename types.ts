@@ -6,7 +6,7 @@ export interface ActiveAssetInstance {
   agentId: string;
   name: string;
   state: any;
-  position: { x: number; y: number }; // Retained for potential future spatial UIs, but unused in stream view.
+  position: { x: number; y: number };
   createdAt: string; // ISO 8601 date string
   updatedAt: string; // ISO 8601 date string
 }
@@ -19,15 +19,16 @@ export interface AgentDefinition {
   icon: React.FC<{ className?: string }>;
   component: React.FC<AgentComponentProps>;
   defaultState: any;
-  size?: 'small' | 'full';
+  size?: 'small' | 'medium' | 'full'; // Added medium
 }
 
 // System-wide settings
 export interface SystemSettings {
   userName: string;
-  theme: 'light' | 'dark'; // For future expansion
+  themeName: string; // e.g., 'default', 'nebula'
+  themeMode: 'light' | 'dark';
   geminiApiKey: string | null;
-  wallpaper: string | null;
+  wallpaper: string | null; // Kept for compatibility, but themes can override
 }
 
 export enum ModalType {
@@ -48,7 +49,7 @@ export interface UIState {
     aiPanelState: AIPanelState;
     assetCreationData: { agentId: string; agentName: string; } | null;
     isControlCenterOpen: boolean;
-    currentView: 'desktop' | 'glance';
+    currentView: 'desktop' | 'glance'; // 'glance' is now obsolete but kept for type safety
 }
 
 // The entire state of the operating system

@@ -2,15 +2,17 @@ import React, { useState, useRef, ChangeEvent } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { ModalType, OSState } from '../../types';
 import Modal from '../shared/Modal';
-import { SettingsIcon, UploadIcon, DownloadIcon } from '../../assets/icons';
+import { SettingsIcon, UploadIcon, DownloadIcon, MoonIcon, SunIcon } from '../../assets/icons';
 import { astService } from '../../services/astService';
 import Button from '../shared/Button';
 import Input from '../shared/Input';
+import { themes } from '../../styles/themes';
 
 const Settings: React.FC = () => {
-  const { osState, dispatch, setActiveModal } = useOS();
+  const { osState, dispatch, setActiveModal, setTheme, toggleThemeMode } = useOS();
   const [userName, setUserName] = useState(osState.settings.userName);
   const [geminiApiKey, setGeminiApiKey] = useState(osState.settings.geminiApiKey || '');
+  const { themeName, themeMode } = osState.settings;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
@@ -81,6 +83,33 @@ const Settings: React.FC = () => {
             </p>
         </div>
         
+        <div className="border-t border-border pt-6 space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">外观</h3>
+            <div className="flex items-center justify-between">
+                <label htmlFor="themeSelector" className="text-sm font-medium text-foreground">
+                    主题
+                </label>
+                <select 
+                    id="themeSelector"
+                    value={themeName}
+                    onChange={(e) => setTheme(e.target.value)}
+                    className="px-3 py-1.5 bg-input/80 border border-border rounded-lg text-sm"
+                >
+                    {Object.keys(themes).map(key => (
+                        <option key={key} value={key}>{themes[key].light.name}</option>
+                    ))}
+                </select>
+            </div>
+            <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">
+                    模式
+                </span>
+                <Button onClick={toggleThemeMode} variant="secondary" size="sm" icon={themeMode === 'light' ? MoonIcon : SunIcon}>
+                    切换到{themeMode === 'light' ? '暗色' : '亮色'}
+                </Button>
+            </div>
+        </div>
+
         <div className="border-t border-border pt-6 space-y-4">
             <h3 className="text-lg font-semibold text-foreground">系统状态管理</h3>
             <p className="text-sm text-muted-foreground">您可以将整个操作系统的当前状态（包括所有资产和设置）导出为一个 `.ast` 文件进行备份，或从文件中恢复。</p>

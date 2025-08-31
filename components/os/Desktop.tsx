@@ -1,173 +1,127 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
-import { ActiveAssetInstance } from '../../types';
+import { motion, PanInfo, useMotionValue, useTransform, animate } from 'framer-motion';
 import { ChevronDownIcon } from '../../assets/icons';
 
-const Desktop: React.FC = () => {
-  const { osState, setControlCenterOpen } = useOS();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { settings, ui: { isControlCenterOpen } } = osState;
+const SpatialCanvas: React.FC = () => {
+    const { osState, dispatch, setControlCenterOpen } = useOS();
+    const { ui: { isControlCenterOpen } } = osState;
 
-  const y = useMotionValue(0);
-  
-  const pullDownY = useTransform(y, (v) => {
-    if (v < 0) return 0;
-    return Math.pow(v, 0.85); // Apply resistance
-  });
-  const indicatorOpacity = useTransform(y, [0, 60], [0, 1]);
-  const indicatorScale = useTransform(y, [0, 60], [0.8, 1]);
+    const [view, setView] = useState({ x: 0, y: 0, scale: 0.8 });
+    const constraintsRef = useRef(null);
 
-  useEffect(() => {
-    if (!isControlCenterOpen) {
-      animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
-    }
-  }, [isControlCenterOpen, y]);
-
-  useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
-
-    let startY = 0;
-    let isDragging = false;
-    let canDrag = false;
-
-    const handlePointerMove = (event: PointerEvent) => {
-        if (!isDragging) return;
+    const handleWheel = (event: React.WheelEvent) => {
+        const point = { x: event.clientX, y: event.clientY };
+        const newScale = view.scale * (1 - event.deltaY / 1000);
+        const clampedScale = Math.min(Math.max(newScale, 0.2), 2);
         
-        event.preventDefault(); // Prevent browser's default overscroll behavior
+        const oldPoint = {
+            x: (point.x - view.x) / view.scale,
+            y: (point.y - view.y) / view.scale,
+        };
+        const newPoint = {
+            x: (point.x - view.x) / clampedScale,
+            y: (point.y - view.y) / clampedScale,
+        };
 
-        const deltaY = event.clientY - startY;
-        // Follow finger but don't go above the starting point.
-        // This is the key fix to prevent the "bounce back" issue.
-        y.set(Math.max(0, deltaY));
+        setView(v => ({
+            ...v,
+            scale: clampedScale,
+            x: v.x + (newPoint.x - oldPoint.x) * clampedScale,
+            y: v.y + (newPoint.y - oldPoint.y) * clampedScale,
+        }));
     };
-
-    const handlePointerUp = () => {
-        if (!isDragging) return;
-        
-        isDragging = false;
-        canDrag = false;
-        window.removeEventListener('pointermove', handlePointerMove);
-        window.removeEventListener('pointerup', handlePointerUp);
-        window.removeEventListener('pointercancel', handlePointerUp);
-
-        const pullThreshold = 80; // Distance needed to pull to open
-        if (y.get() > pullThreshold) {
-            setControlCenterOpen(true);
-        } else {
-            animate(y, 0, { type: 'spring', stiffness: 500, damping: 50 });
+    
+    const handleAssetDragEnd = (assetId: string, info: PanInfo) => {
+        const asset = osState.activeAssets[assetId];
+        if (asset) {
+            const newPosition = {
+                x: asset.position.x + info.offset.x / view.scale,
+                y: asset.position.y + info.offset.y / view.scale,
+            };
+            dispatch({ type: 'UPDATE_ASSET_METADATA', payload: { assetId, position: newPosition } });
         }
     };
     
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!event.isPrimary || isControlCenterOpen) return;
-      
-      const isAtTop = scrollContainer.scrollTop <= 0;
-      
-      if (isAtTop) {
-        canDrag = true;
-        startY = event.clientY;
-        
-        const startDrag = (moveEvent: PointerEvent) => {
-          // Start dragging only on a clear downward movement
-          if (canDrag && moveEvent.clientY > startY) {
-            isDragging = true;
-            window.removeEventListener('pointermove', startDrag);
-            window.addEventListener('pointermove', handlePointerMove, { passive: false });
-            // Re-call handlePointerMove to process the initial movement
-            handlePointerMove(moveEvent); 
-          } else if (canDrag && moveEvent.clientY < startY) {
-             // If user scrolls up first, cancel the pull-down gesture
-             canDrag = false;
-             window.removeEventListener('pointermove', startDrag);
-          }
-        };
-        
-        window.addEventListener('pointermove', startDrag, { passive: true });
-        window.addEventListener('pointerup', handlePointerUp, { once: true });
-        window.addEventListener('pointercancel', handlePointerUp, { once: true });
+    // Control Center pull-down logic
+    const y = useMotionValue(0);
+    const pullDownY = useTransform(y, (v) => v < 0 ? 0 : Math.pow(v, 0.85));
+    const indicatorOpacity = useTransform(y, [0, 60], [0, 1]);
+    const indicatorScale = useTransform(y, [0, 60], [0.8, 1]);
+
+    useEffect(() => {
+        if (!isControlCenterOpen) {
+            animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
+        }
+    }, [isControlCenterOpen, y]);
+
+    const handleContainerPan = (e: MouseEvent, info: PanInfo) => {
+      // Only pan the view if not dragging an asset bubble
+      const target = e.target as HTMLElement;
+      if (target.closest('[role="button"]')) { // Assuming bubbles have role="button" or similar
+        return;
       }
+       setView(v => ({ ...v, x: v.x + info.delta.x, y: v.y + info.delta.y }));
     };
-    
-    // Use capture phase to catch the event before child elements do.
-    scrollContainer.addEventListener('pointerdown', handlePointerDown, { capture: true });
 
-    return () => {
-      scrollContainer.removeEventListener('pointerdown', handlePointerDown, { capture: true });
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
-    };
-  }, [y, setControlCenterOpen, isControlCenterOpen]);
-  
-  const assetPriority = (asset: ActiveAssetInstance) => {
-    if (asset.agentId === 'agent.system.insight') return -1;
-    if (asset.agentId === 'agent.system.clock' || asset.agentId === 'agent.system.weather' || asset.agentId === 'agent.system.calculator') return 0;
-    return 1;
-  };
-
-  const sortedAssets = useMemo(() => Object.values(osState.activeAssets)
-    .sort((a, b) => {
-        const priorityA = assetPriority(a);
-        const priorityB = assetPriority(b);
-        if (priorityA !== priorityB) return priorityA - priorityB;
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    }), [osState.activeAssets]);
-
-  return (
-    <div 
-        className="h-full w-full bg-cover bg-center transition-all duration-500"
-        style={{ backgroundImage: settings.wallpaper ? `url(${settings.wallpaper})` : 'none' }}
-    >
-      <div 
-        className="h-full w-full bg-background/80 relative overflow-hidden"
-      >
-        <motion.div 
-            className="absolute top-0 left-0 right-0 flex justify-center pt-4 z-0 pointer-events-none"
-            style={{ opacity: indicatorOpacity, scale: indicatorScale }}
+    return (
+        <div 
+            ref={constraintsRef}
+            className="h-full w-full relative overflow-hidden"
+            onWheel={handleWheel}
         >
-            <div className="w-10 h-10 bg-glass rounded-full shadow-lg flex items-center justify-center">
-                <ChevronDownIcon className="w-6 h-6 text-muted-foreground" />
-            </div>
-        </motion.div>
+            <motion.div 
+                className="absolute top-0 left-0 right-0 flex justify-center pt-4 z-10 pointer-events-none"
+                style={{ opacity: indicatorOpacity, scale: indicatorScale }}
+            >
+                <div className="w-10 h-10 bg-glass rounded-full shadow-lg flex items-center justify-center">
+                    <ChevronDownIcon className="w-6 h-6 text-muted-foreground" />
+                </div>
+            </motion.div>
         
-        <motion.div
-            style={{ y: pullDownY }}
-            className="h-full w-full absolute inset-0"
-        >
-          <div
-              ref={scrollContainerRef}
-              className="h-full w-full overflow-y-auto overscroll-behavior-y-contain"
-          >
-              <motion.div 
-                  layout 
-                  className="max-w-3xl mx-auto grid grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6"
-              >
-                  <AnimatePresence>
-                  {sortedAssets.map(asset => {
-                      const agentDef = osState.installedAgents[asset.agentId];
-                      const sizeClass = agentDef?.size === 'small' ? 'col-span-1' : 'col-span-2';
-                      return (
-                      <motion.div key={asset.id} layout className={sizeClass}>
-                          <AgentBubble asset={asset} />
-                      </motion.div>
-                      )
-                  })}
-                  </AnimatePresence>
-                  {sortedAssets.length === 0 && (
-                      <div className="text-center py-20 col-span-2">
-                          <h2 className="text-xl font-semibold text-foreground">空空如也</h2>
-                          <p className="text-muted-foreground mt-2">点击下方的 AI 图标开始创建你的第一个智能资产吧！</p>
-                      </div>
-                  )}
-              </motion.div>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
+            <motion.div
+                className="h-full w-full absolute inset-0 cursor-grab active:cursor-grabbing"
+                style={{ y: pullDownY }}
+                onPanStart={(event) => {
+                    const target = event.target as HTMLElement;
+                    // Only allow pan-down for control center if it's from the background canvas
+                    if (target.dataset.isCanvas) {
+                       y.set(0);
+                    }
+                }}
+                onPan={(event, info) => {
+                    const target = event.target as HTMLElement;
+                    if (target.dataset.isCanvas) {
+                        y.set(y.get() + info.delta.y);
+                    }
+                }}
+                onPanEnd={() => {
+                   if (y.get() > 80) {
+                        setControlCenterOpen(true);
+                    } else {
+                        animate(y, 0, { type: 'spring', stiffness: 500, damping: 50 });
+                    }
+                }}
+            >
+                <motion.div
+                    data-is-canvas="true"
+                    className="w-full h-full relative"
+                    style={{ x: view.x, y: view.y, scale: view.scale, touchAction: 'none' }}
+                    onPan={handleContainerPan}
+                >
+                    {Object.values(osState.activeAssets).map(asset => (
+                        <AgentBubble 
+                            key={asset.id} 
+                            asset={asset}
+                            scale={view.scale}
+                            onDragEnd={handleAssetDragEnd}
+                        />
+                    ))}
+                </motion.div>
+            </motion.div>
+        </div>
+    );
 };
 
-export default Desktop;
+export default SpatialCanvas;

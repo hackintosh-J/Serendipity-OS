@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useCallback, R
 import { OSState, OSAction, ActiveAssetInstance, ModalType, AIPanelState } from '../types';
 import { INITIAL_OS_STATE } from '../constants';
 import { geminiService } from '../services/geminiService';
+import { themes, applyTheme } from '../styles/themes';
 
 const OS_STATE_LOCAL_STORAGE_KEY = 'serendipity_os_state';
 
@@ -205,7 +206,8 @@ interface IOSContext {
   setAIPanelState: (state: AIPanelState) => void;
   setControlCenterOpen: (isOpen: boolean) => void;
   setCurrentView: (view: 'desktop' | 'glance') => void;
-  toggleTheme: () => void;
+  toggleThemeMode: () => void;
+  setTheme: (themeName: string) => void;
   triggerInsightGeneration: () => void;
   deleteArchivedInsight: (assetId: string) => void;
   restoreArchivedInsight: (assetId: string) => void;
@@ -256,6 +258,22 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       }
     }
   }, [osState]);
+
+  useEffect(() => {
+    if (osState.isInitialized) {
+        const { themeName, themeMode } = osState.settings;
+        const themeData = themes[themeName]?.[themeMode] || themes.default[themeMode];
+        
+        applyTheme(themeData);
+
+        const root = document.documentElement;
+        if (themeMode === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+    }
+  }, [osState.settings.themeName, osState.settings.themeMode, osState.isInitialized]);
   
   const triggerInsightGeneration = useCallback(() => {
     const { settings, activeAssets } = osState;
@@ -382,13 +400,19 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       dispatch({ type: 'SET_CURRENT_VIEW', payload: view });
   }, []);
 
-  const toggleTheme = useCallback(() => {
-    const newTheme = osState.settings.theme === 'light' ? 'dark' : 'light';
-    dispatch({ type: 'UPDATE_SETTINGS', payload: { theme: newTheme } });
-  }, [osState.settings.theme]);
+  const toggleThemeMode = useCallback(() => {
+    const newThemeMode = osState.settings.themeMode === 'light' ? 'dark' : 'light';
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { themeMode: newThemeMode } });
+  }, [osState.settings.themeMode]);
+  
+  const setTheme = useCallback((themeName: string) => {
+    if (themes[themeName]) {
+        dispatch({ type: 'UPDATE_SETTINGS', payload: { themeName } });
+    }
+  }, []);
 
   return (
-    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleTheme, triggerInsightGeneration, deleteArchivedInsight, restoreArchivedInsight }}>
+    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleThemeMode, setTheme, triggerInsightGeneration, deleteArchivedInsight, restoreArchivedInsight }}>
       {children}
     </OSContext.Provider>
   );

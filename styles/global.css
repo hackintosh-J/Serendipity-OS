@@ -1,0 +1,48 @@
+/* styles/global.css */
+:root {
+  /* Default Theme (Light) - will be overridden by JS */
+  --color-background: 248 247 244;
+  --color-foreground: 26 32 44;
+  --color-card: 255 255 255;
+  --color-card-foreground: 26 32 44;
+  --color-primary: 0 128 128;
+  --color-primary-foreground: 255 255 255;
+  --color-secondary: 226 232 240;
+  --color-secondary-foreground: 26 32 44;
+  --color-muted: 241 245 249;
+  --color-muted-foreground: 100 116 139;
+  --color-accent: 96 165 250;
+  --color-accent-foreground: 255 255 255;
+  --color-destructive: 220 38 38;
+  --color-border: 226 232 240;
+  --color-input: 226 232 240;
+  --color-ring: 0 128 128;
+  --opacity-card: 0.8;
+  --opacity-glass: 0.5;
+  --background-style: rgb(var(--color-background));
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--background-style);
+  color: rgb(var(--color-foreground));
+  transition: background 0.5s ease-in-out, color 0.5s ease-in-out;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+input, textarea {
+  -webkit-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
+}

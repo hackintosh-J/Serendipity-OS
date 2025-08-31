@@ -1,11 +1,9 @@
-
-
 import React from 'react';
 import { ActiveAssetInstance } from '../types';
 import { useOS } from '../contexts/OSContext';
 import { astService } from '../services/astService';
 import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon } from './icons';
-import { motion, useDragControls, Reorder } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface AgentBubbleProps {
   asset: ActiveAssetInstance;
@@ -36,7 +34,6 @@ const LiveClockPreview: React.FC = () => {
 const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
   const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
-  const dragControls = useDragControls();
 
   const handleExport = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,8 +50,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
   }
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent click from triggering when a drag handle or interactive element inside is clicked
-    if ((e.target as HTMLElement).closest('button, input, a, [data-reorder-handle]')) {
+    if ((e.target as HTMLElement).closest('button, input, a')) {
         return;
     }
     viewAsset(asset.id);
@@ -184,19 +180,14 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
   const containerClasses = 'relative w-full h-full bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 flex flex-col transition-shadow duration-300';
 
   return (
-    <Reorder.Item
-      value={asset}
-      as="div"
+    <motion.div
       className={className}
-      dragListener={false}
-      dragControls={dragControls}
       layoutId={`asset-bubble-${asset.id}`}
       variants={cardVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
       transition={{ type: 'spring', duration: 0.5 }}
-      whileDrag={{ scale: 1.05, boxShadow: '0px 10px 30px rgba(0,0,0,0.2)' }}
     >
       <div
         className={containerClasses}
@@ -204,15 +195,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
         aria-label={`打开 ${asset.name}`}
         role="button"
       >
-        <header
-          data-reorder-handle
-          onPointerDown={(e) => {
-              if ((e.target as HTMLElement).closest('button')) return;
-              e.preventDefault();
-              dragControls.start(e);
-          }}
-          className="flex justify-between items-start mb-3 flex-shrink-0 cursor-grab active:cursor-grabbing"
-        >
+        <header className="flex justify-between items-start mb-3 flex-shrink-0">
           <div className="flex items-center space-x-3 min-w-0">
             {!isMinimalPreview && (
               <div className="w-10 h-10 bg-secondary rounded-lg shadow-inner flex items-center justify-center flex-shrink-0">
@@ -243,7 +226,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
           <CardPreview />
         </main>
       </div>
-    </Reorder.Item>
+    </motion.div>
   );
 };
 

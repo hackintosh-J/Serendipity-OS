@@ -43,12 +43,19 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
 5.  'READ_ASSET_STATE': 读取现有AA的状态以回答有关它的问题。这应该在用户询问资产内容时使用 (例如, "我的购物清单上有什么?")。
     - 'assetName': (必需) 要读取的资产的名称。
     - 'question': (可选) 用户的具体问题。如果省略, 将使用用户的原始提示。
+6.  'UPDATE_ASSET_ORDER': 重新整理桌面布局。
+    - 'order': (必需) 包含所有资产ID的数组，按新的期望顺序排列。
 
 特殊指令 - 天气:
 当用户询问天气时，你必须使用你的知识来提供真实的实时天气数据。
 - 如果存在该地点的天气资产，请使用 'FIND_AND_UPDATE_ASSET' 动作来更新它。
 - 如果不存在，请使用 'CREATE_ASSET' 动作创建一个新的天气资产。
 - 在 'newState' 或 'initialState' 中，'data' 字段必须包含以下所有属性: 'temp' (数字), 'condition' (字符串), 'high' (数字), 'low' (数字), 'humidity' (字符串, e.g., "55%"), 'wind' (字符串, e.g., "东北风 3级")。
+
+特殊指令 - 桌面整理:
+当用户要求整理桌面时 (例如 "整理我的桌面", "把时钟和天气放在最上面")，你必须使用 'UPDATE_ASSET_ORDER' 动作。
+- 在 'payload' 中，'order' 字段必须包含所有当前活动资产ID的完整、重新排列过的数组。
+- 规则：'small' 尺寸的资产 (如时钟和天气) 应该成对出现，以保持网格整齐。不要将一个 'small' 资产放在两个 'medium' 或 'full' 资产之间，这会破坏布局。
 
 联动指令 - 日历与待办清单:
 当用户创建一个带有日期的待办事项时 (例如, "提醒我明天下午3点开会"), 你应该创建两个动作:
@@ -65,62 +72,27 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
 - 'agent.system.todo': 待办清单 (state: { todos: [{ id: string, text: string, completed: boolean, date?: 'YYYY-MM-DD' }] })
 - 'agent.system.insight': AI洞察 (由系统自动生成)
 
-用户的当前系统状态中存在以下资产:
+用户的当前桌面布局及资产信息如下:
 {ACTIVE_ASSETS_JSON}
 
 例子 1:
-用户: "提醒我明天下午三点开会，并把这件事加到购物清单里"
+用户: "把天气和时钟放在最上面，然后是我的日历"
 你返回:
 <thinking>
-用户有两个请求。
-第一个是关于一个会议提醒。这涉及到两个资产：日历和待办清单。我需要同时更新它们。我会为“我的日历”添加一个事件，并为“购物清单”添加一个带日期的待办事项。
-第二个请求是把“开会”这件事也加入“购物清单”，这不合逻辑，但我会把这个事项作为单独的todo加入。
-所以总共是三个动作，一个更新日历，两个更新待办清单。
+用户想重新排列桌面。
+当前的顺序是: ['welcome-asset', 'clock-asset', 'weather-beijing-asset', 'my-calendar', 'shopping-list']
+'clock-asset' (small) 和 'weather-beijing-asset' (small) 应该被移动到顶部，并且应该在一起。
+'my-calendar' (full) 应该在它们之后。
+剩下的 'welcome-asset' (medium) 和 'shopping-list' (medium) 应该在最后。
+所以新的顺序是: ['clock-asset', 'weather-beijing-asset', 'my-calendar', 'welcome-asset', 'shopping-list']
+我将使用 UPDATE_ASSET_ORDER 动作来执行此操作。
 </thinking>
 \`\`\`json
 {
-  "actions": [
-    {
-      "action": "FIND_AND_UPDATE_ASSET",
-      "payload": {
-        "assetName": "我的日历",
-        "newState": {
-          "events": {
-            "2024-08-16": [{"time": "15:00", "text": "开会"}]
-          }
-        }
-      }
-    },
-    {
-      "action": "FIND_AND_UPDATE_ASSET",
-      "payload": {
-        "assetName": "购物清单",
-        "newState": {
-          "todos": [
-            {"id": "1", "text": "牛奶", "completed": false},
-            {"id": "2", "text": "面包", "completed": true},
-            {"id": "3", "text": "鸡蛋", "completed": false},
-            {"id": "4", "text": "开会", "completed": false, "date": "2024-08-16"}
-          ]
-        }
-      }
-    },
-    {
-      "action": "FIND_AND_UPDATE_ASSET",
-      "payload": {
-        "assetName": "购物清单",
-        "newState": {
-           "todos": [
-            {"id": "1", "text": "牛奶", "completed": false},
-            {"id": "2", "text": "面包", "completed": true},
-            {"id": "3", "text": "鸡蛋", "completed": false},
-            {"id": "4", "text": "开会", "completed": false, "date": "2024-08-16"},
-            {"id": "5", "text": "开会", "completed": false}
-          ]
-        }
-      }
-    }
-  ]
+  "action": "UPDATE_ASSET_ORDER",
+  "payload": {
+    "order": ["clock-asset", "weather-beijing-asset", "my-calendar", "welcome-asset", "shopping-list"]
+  }
 }
 \`\`\`
 `;
@@ -238,9 +210,22 @@ class GeminiService {
 
     const ai = new GoogleGenAI({ apiKey });
 
+    const assetDetails = osState.desktopAssetOrder.map((assetId: string) => {
+        const asset = osState.activeAssets[assetId];
+        const agent = osState.installedAgents[asset.agentId];
+        if (!asset || !agent) return null;
+        return {
+            id: asset.id,
+            name: asset.name,
+            size: agent.size || 'medium'
+        };
+    }).filter(Boolean);
+
+    const contextForAI = JSON.stringify(assetDetails, null, 2);
+
     const finalSystemInstruction = systemInstruction.replace(
         '{ACTIVE_ASSETS_JSON}',
-        JSON.stringify(Object.values(osState.activeAssets).map((a: any) => ({ id: a.id, name: a.name, agentId: a.agentId })), null, 2)
+        contextForAI
     );
 
     try {
@@ -262,6 +247,7 @@ class GeminiService {
 
             // Extract thinking content
             const thinkStart = fullText.indexOf('<thinking>');
+            // FIX: Corrected typo from `full` to `fullText`.
             const thinkEnd = fullText.indexOf('</thinking>');
 
             if (thinkStart !== -1) {

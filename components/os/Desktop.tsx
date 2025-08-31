@@ -1,11 +1,8 @@
-
-
 import React, { useRef, useEffect, useMemo } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
-import { motion, useMotionValue, useTransform, animate, Reorder } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { ChevronDownIcon } from '../../assets/icons';
-import { ActiveAssetInstance } from '../../types';
 
 const Desktop: React.FC = () => {
     const { osState, dispatch, setControlCenterOpen } = useOS();
@@ -47,8 +44,7 @@ const Desktop: React.FC = () => {
         };
 
         const handlePointerDown = (event: PointerEvent) => {
-             // Only trigger pull-down if not dragging an agent bubble
-            if (scrollContainer.scrollTop === 0 && event.isPrimary && !isControlCenterOpen && !(event.target as HTMLElement).closest('[data-reorder-handle]')) {
+            if (scrollContainer.scrollTop === 0 && event.isPrimary && !isControlCenterOpen) {
                 isDragging = true;
                 startY = event.clientY;
                 y.set(0);
@@ -78,45 +74,6 @@ const Desktop: React.FC = () => {
         return desktopAssetOrder.map(id => activeAssets[id]).filter(Boolean);
     }, [desktopAssetOrder, activeAssets]);
 
-    const handleReorder = (newOrderAssets: ActiveAssetInstance[]) => {
-        const cleanedOrderIds: string[] = [];
-        let unprocessedAssets = [...newOrderAssets];
-
-        while (unprocessedAssets.length > 0) {
-            const currentAsset = unprocessedAssets.shift(); // Takes the first one
-            if (!currentAsset) continue;
-
-            cleanedOrderIds.push(currentAsset.id);
-            
-            const agentDef = installedAgents[currentAsset.agentId];
-            const currentIsSmall = agentDef?.size === 'small';
-
-            if (currentIsSmall) {
-                // It's a small item. To maintain the grid, we should try to pair it
-                // with another small item if one exists.
-                let partnerIndex = -1;
-                // Find the next available small item in the unprocessed list.
-                for (let i = 0; i < unprocessedAssets.length; i++) {
-                    const partnerAsset = unprocessedAssets[i];
-                    const partnerAgentDef = installedAgents[partnerAsset.agentId];
-                    if (partnerAgentDef?.size === 'small') {
-                        partnerIndex = i;
-                        break;
-                    }
-                }
-
-                if (partnerIndex !== -1) {
-                    // A partner was found. Move it from its current position
-                    // to be right after the current small item.
-                    const [partnerAsset] = unprocessedAssets.splice(partnerIndex, 1);
-                    cleanedOrderIds.push(partnerAsset.id);
-                }
-            }
-        }
-        
-        dispatch({ type: 'UPDATE_ASSET_ORDER', payload: cleanedOrderIds });
-    };
-
     return (
         <div className="h-full w-full relative overflow-hidden">
             <motion.div 
@@ -136,10 +93,9 @@ const Desktop: React.FC = () => {
                     ref={scrollContainerRef}
                     className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6"
                 >
-                    <Reorder.Group
-                        as="div"
-                        values={orderedAssets}
-                        onReorder={handleReorder}
+                    <motion.div
+                        layout
+                        transition={{ type: 'spring', damping: 25, stiffness: 120 }}
                         className="max-w-2xl mx-auto grid grid-cols-2 gap-4"
                     >
                        {orderedAssets.map(asset => {
@@ -161,7 +117,7 @@ const Desktop: React.FC = () => {
                                />
                            )
                        })}
-                    </Reorder.Group>
+                    </motion.div>
                 </div>
             </motion.div>
         </div>

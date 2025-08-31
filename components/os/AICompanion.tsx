@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { geminiService } from '../../services/geminiService';
@@ -124,6 +123,20 @@ const AIPanel: React.FC = () => {
                   }
                   break;
               }
+              case 'UPDATE_ASSET_ORDER':
+                if (payload.order && Array.isArray(payload.order)) {
+                    const currentIds = new Set(Object.keys(osState.activeAssets));
+                    const newIds = new Set(payload.order);
+                    if (currentIds.size === newIds.size && [...currentIds].every(id => newIds.has(id as string))) {
+                        dispatch({ type: 'UPDATE_ASSET_ORDER', payload: payload.order });
+                        responseTexts.push(`好的，我已经重新整理了您的桌面。`);
+                    } else {
+                        responseTexts.push(`抱歉，整理桌面时出现错误：资产列表不匹配。`);
+                    }
+                } else {
+                    responseTexts.push(`抱歉，整理桌面时出现错误：无效的顺序。`);
+                }
+                break;
               case 'ANSWER_QUESTION':
                   responseTexts.push(payload.answer);
                   break;

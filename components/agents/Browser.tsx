@@ -23,7 +23,7 @@ const BrowserAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) 
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-secondary -m-4">
+    <div className="w-full h-full flex flex-col bg-secondary">
       <header className="flex-shrink-0 bg-card-glass backdrop-blur-lg border-b border-border p-2 flex items-center gap-2">
         <form onSubmit={handleNavigate} className="flex-grow">
           <input

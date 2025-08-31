@@ -79,7 +79,7 @@ const CalculatorAgent: React.FC<AgentComponentProps> = ({ instance, updateState 
   );
 
   return (
-    <div className="w-full h-full flex flex-col p-4 bg-card text-card-foreground rounded-lg -m-4">
+    <div className="w-full h-full flex flex-col p-4 bg-card text-card-foreground rounded-lg">
       <div className="flex-grow bg-background/50 rounded-lg mb-4 p-4 text-right text-5xl font-mono break-all flex items-end justify-end">
         {display}
       </div>

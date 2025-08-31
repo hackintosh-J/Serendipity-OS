@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { OSState, ModalType, AgentDefinition, AIPanelState, AgentComponentProps } from './types';
-import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent, MediaPlayerAgent, CameraAgent, PhotosAgent } from './components/agents/index';
-import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon, DownloadIcon, PlayIcon, CameraIcon, ImageIcon } from './assets/icons';
+import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent, MediaPlayerAgent, CameraAgent, PhotosAgent, VoiceMemoAgent } from './components/agents/index';
+import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon, DownloadIcon, PlayIcon, CameraIcon, ImageIcon, MicIcon } from './assets/icons';
 import Button from './components/shared/Button';
 import { storageService } from './services/storageService';
 
@@ -41,7 +41,7 @@ const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, update
         close();
     };
 
-    return React.createElement('div', { className: "p-4 bg-transparent rounded-lg -m-4 text-card-foreground" },
+    return React.createElement('div', { className: "p-4 bg-transparent rounded-lg text-card-foreground" },
         React.createElement('h2', { className: "text-xl font-bold mb-4" }, instance.name),
         React.createElement('p', { className: "leading-relaxed mb-6 whitespace-pre-wrap" }, content),
         imageUrl && React.createElement('div', { className: "space-y-4" },
@@ -64,6 +64,7 @@ const memoAgent: AgentDefinition = {
     component: MemoAgent,
     defaultState: { content: '' },
     size: 'medium',
+    windowScroll: true,
 };
 
 const browserAgent: AgentDefinition = {
@@ -94,6 +95,7 @@ const helpAgent: AgentDefinition = {
     component: HelpAgent,
     defaultState: {},
     size: 'full',
+    windowScroll: true,
 };
 
 const clockAgent: AgentDefinition = {
@@ -124,6 +126,7 @@ const calendarAgent: AgentDefinition = {
     component: CalendarAgent,
     defaultState: { events: {}, viewDate: new Date().toISOString() },
     size: 'full',
+    windowScroll: true,
 };
 
 const todoAgent: AgentDefinition = {
@@ -134,6 +137,7 @@ const todoAgent: AgentDefinition = {
     component: TodoAgent,
     defaultState: { todos: [] },
     size: 'medium',
+    windowScroll: true,
 };
 
 const mediaPlayerAgent: AgentDefinition = {
@@ -164,6 +168,18 @@ const photosAgent: AgentDefinition = {
     component: PhotosAgent,
     defaultState: { photos: [] },
     size: 'full',
+    windowScroll: true,
+};
+
+const voiceMemoAgent: AgentDefinition = {
+    id: 'agent.system.voice_memo',
+    name: '语音备忘录',
+    description: '录制您的想法和提醒。',
+    icon: MicIcon,
+    component: VoiceMemoAgent,
+    defaultState: { recordings: [] },
+    size: 'medium',
+    windowScroll: true,
 };
 
 
@@ -175,6 +191,7 @@ const insightAgent: AgentDefinition = {
     component: InsightAgentComponent,
     defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, generated_image_storageKey: null, generationStatus: 'complete' },
     size: 'medium',
+    windowScroll: true,
 };
 
 export const PRE_INSTALLED_AGENTS: { [key: string]: AgentDefinition } = {
@@ -188,6 +205,7 @@ export const PRE_INSTALLED_AGENTS: { [key: string]: AgentDefinition } = {
     [mediaPlayerAgent.id]: mediaPlayerAgent,
     [cameraAgent.id]: cameraAgent,
     [photosAgent.id]: photosAgent,
+    [voiceMemoAgent.id]: voiceMemoAgent,
     [helpAgent.id]: helpAgent,
     [insightAgent.id]: insightAgent
 };

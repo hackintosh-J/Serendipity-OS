@@ -21,6 +21,19 @@ const viewerVariants = {
 
 const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, close, dispatch, osState }) => {
   const AgentComponent = agent.component;
+  const needsScroll = agent.windowScroll === true;
+
+  const mainContainerClasses = `fixed inset-0 bg-background z-50 flex flex-col ${
+    needsScroll ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
+  }`;
+
+  const headerClasses = `h-14 flex-shrink-0 bg-card-glass backdrop-blur-lg flex items-center justify-between px-4 border-b border-border/80 z-10 ${
+    needsScroll ? 'sticky top-0' : ''
+  }`;
+
+  const contentContainerClasses = `flex-grow ${
+      !needsScroll ? 'overflow-hidden' : ''
+  }`;
 
   return (
     <motion.div
@@ -30,12 +43,12 @@ const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, cl
       animate="visible"
       exit="exit"
       transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-      className="fixed inset-0 bg-background z-50 flex flex-col"
+      className={mainContainerClasses}
       aria-modal="true"
       role="dialog"
     >
       <header 
-        className="h-14 flex-shrink-0 bg-card-glass backdrop-blur-lg flex items-center justify-between px-4 border-b border-border/80"
+        className={headerClasses}
       >
         <div className="flex items-center space-x-3">
             {asset.agentId !== 'agent.system.clock' && <agent.icon className="w-6 h-6 text-foreground" />}
@@ -50,7 +63,7 @@ const AssetViewer: React.FC<AssetViewerProps> = ({ asset, agent, updateState, cl
             <XIcon className="w-6 h-6" />
         </button>
       </header>
-      <div className="flex-grow p-4 overflow-y-auto overscroll-behavior-y-contain">
+      <div className={contentContainerClasses}>
         <AgentComponent instance={asset} updateState={updateState} close={close} dispatch={dispatch} osState={osState} />
       </div>
     </motion.div>

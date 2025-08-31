@@ -2,6 +2,7 @@
   "name": "Serendipity OS",
   "description": "A futuristic, AI-native mobile operating system that replaces the traditional app paradigm with intelligent agents and a context-aware interface. All state is managed locally and can be exported/imported.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ]
 }

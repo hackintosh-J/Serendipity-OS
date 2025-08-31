@@ -11,4 +11,5 @@ export { default as TodoAgent } from './Todo';
 export { default as MediaPlayerAgent } from './MediaPlayer';
 export { default as CameraAgent } from './Camera';
 export { default as PhotosAgent } from './Photos';
+export { default as VoiceMemoAgent } from './VoiceMemo';
 // Future agents like Camera, Calendar, etc., would be exported here.

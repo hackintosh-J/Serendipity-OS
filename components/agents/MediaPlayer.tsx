@@ -73,7 +73,7 @@ const MediaPlayerAgent: React.FC<AgentComponentProps> = ({ instance, updateState
     
     if (isLoading) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center text-center text-muted-foreground p-4 -m-4">
+            <div className="w-full h-full flex flex-col items-center justify-center text-center text-muted-foreground p-4">
                 <svg className="animate-spin h-8 w-8 text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -86,7 +86,7 @@ const MediaPlayerAgent: React.FC<AgentComponentProps> = ({ instance, updateState
 
     if (!fileDataURL) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center text-center text-muted-foreground p-4 bg-secondary/30 rounded-lg -m-4">
+            <div className="w-full h-full flex flex-col items-center justify-center text-center text-muted-foreground p-4 bg-secondary/30 rounded-lg">
                 <PlayIcon className="w-16 h-16 mb-4 text-muted-foreground/50" />
                 <h3 className="text-lg font-semibold">媒体播放器</h3>
                 <p className="text-sm mb-6">选择一个音频或视频文件进行播放。</p>
@@ -111,7 +111,7 @@ const MediaPlayerAgent: React.FC<AgentComponentProps> = ({ instance, updateState
     const isVideo = fileType?.startsWith('video/');
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center -m-4 p-4 bg-black">
+        <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-black">
             {isVideo ? (
                 <video src={fileDataURL} controls className="max-w-full max-h-[80%]" />
             ) : (

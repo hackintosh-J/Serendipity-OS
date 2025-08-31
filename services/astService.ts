@@ -32,6 +32,15 @@ class ASTService {
                 await storageService.setItem(storageKey, dataUrl);
                 asset.state.generated_image_storageKey = storageKey;
                 delete asset.state.generated_image;
+            } else if (asset.agentId === 'agent.system.voice_memo' && asset.state.recordings) {
+                for (const recording of asset.state.recordings) {
+                    if (recording.dataUrl) {
+                        const storageKey = `voicememo-${recording.id || Date.now()}-${Math.random()}`;
+                        await storageService.setItem(storageKey, recording.dataUrl);
+                        recording.storageKey = storageKey;
+                        delete recording.dataUrl;
+                    }
+                }
             }
       };
       

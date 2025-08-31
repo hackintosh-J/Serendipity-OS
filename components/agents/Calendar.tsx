@@ -59,7 +59,7 @@ const CalendarAgent: React.FC<AgentComponentProps> = ({ instance, updateState })
   const today = new Date();
   
   return (
-    <div className="w-full h-full flex flex-col md:flex-row -m-4 bg-background">
+    <div className="w-full h-full flex flex-col md:flex-row bg-background">
       {/* Calendar View */}
       <div className="w-full md:w-2/3 p-4 flex flex-col">
         <header className="flex items-center justify-between mb-4">

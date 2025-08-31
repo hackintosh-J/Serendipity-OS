@@ -87,7 +87,7 @@ const PhotosAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) =
 
 
     return (
-        <div className="w-full h-full flex flex-col -m-4 bg-background">
+        <div className="w-full h-full flex flex-col bg-background">
             {photos.length === 0 ? (
                 <div className="flex-grow flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
                     <ImageIcon className="w-16 h-16 mb-4" />

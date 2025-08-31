@@ -40,7 +40,7 @@ const TodoAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => 
     };
 
     return (
-        <div className="w-full h-full flex flex-col -m-4">
+        <div className="w-full h-full flex flex-col">
             <div className="flex-grow p-4 overflow-y-auto">
                 <ul className="space-y-2">
                     <AnimatePresence>

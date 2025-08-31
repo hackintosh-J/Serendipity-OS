@@ -18,7 +18,7 @@ const MemoAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) => 
   }, [content, instance.state, updateState]);
   
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col p-4">
       <textarea
         className="w-full h-full p-2 bg-transparent text-foreground resize-none border-none focus:ring-0 text-base leading-relaxed"
         value={content}

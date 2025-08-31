@@ -149,7 +149,7 @@ const CameraAgent: React.FC<AgentComponentProps> = ({ close, dispatch, osState }
 
     if (error) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center text-destructive text-center p-4 -m-4 bg-background">
+            <div className="w-full h-full flex flex-col items-center justify-center text-destructive text-center p-4 bg-background">
                 <p>{error}</p>
                 {(error.includes("权限") || error.includes("denied")) && (
                      <Button onClick={handleRetake} variant="secondary" className="mt-4">重试</Button>
@@ -159,7 +159,7 @@ const CameraAgent: React.FC<AgentComponentProps> = ({ close, dispatch, osState }
     }
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center -m-4 bg-black">
+        <div className="w-full h-full flex flex-col items-center justify-center bg-black">
             <div className="relative w-full h-full">
                 {capturedImage ? (
                     <img src={capturedImage} alt="Captured" className="w-full h-full object-contain" />

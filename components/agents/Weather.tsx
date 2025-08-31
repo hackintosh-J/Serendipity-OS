@@ -9,7 +9,7 @@ const WeatherAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) 
 
     if (!data) {
         return (
-             <div className="w-full h-full flex flex-col items-center justify-center text-center text-gray-800 p-4 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg -m-4">
+             <div className="w-full h-full flex flex-col items-center justify-center text-center text-gray-800 p-4 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg">
                 <h2 className="text-3xl font-bold">{location}</h2>
                 <p className="mt-4 text-gray-600">暂无天气数据</p>
                 <div className="mt-8 text-xs text-gray-900/70 p-2 bg-white/30 rounded-full flex items-center">
@@ -23,7 +23,7 @@ const WeatherAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) 
     const weatherData = data;
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center text-center text-white p-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg -m-4 shadow-lg">
+        <div className="w-full h-full flex flex-col items-center justify-center text-center text-white p-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg shadow-lg">
             <h2 className="text-4xl font-bold drop-shadow-md">{location}</h2>
             <div className="my-6">
                 <CloudIcon className="w-24 h-24 text-white/90 drop-shadow-lg" />

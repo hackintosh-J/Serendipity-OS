@@ -22,6 +22,7 @@ export interface AgentDefinition {
   component: React.FC<AgentComponentProps>;
   defaultState: any;
   size?: 'small' | 'medium' | 'full'; // Added medium
+  windowScroll?: boolean;
 }
 
 // System-wide settings
@@ -50,7 +51,7 @@ export interface UIState {
     aiPanelState: AIPanelState;
     assetCreationData: { agentId: string; agentName: string; } | null;
     isControlCenterOpen: boolean;
-    currentView: 'desktop' | 'glance'; // 'glance' is now obsolete but kept for type safety
+    currentView: 'desktop' | 'glance';
 }
 
 // The entire state of the operating system

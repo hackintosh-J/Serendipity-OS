@@ -65,8 +65,10 @@ const HelpAgent: React.FC<AgentComponentProps> = () => {
   };
 
   return (
-    <div className="prose max-w-none">
-      {renderContent()}
+    <div className="p-4">
+        <div className="prose max-w-none">
+            {renderContent()}
+        </div>
     </div>
   );
 };

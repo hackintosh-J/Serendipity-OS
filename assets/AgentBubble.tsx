@@ -3,13 +3,10 @@ import { ActiveAssetInstance } from '../types';
 import { useOS } from '../contexts/OSContext';
 import { astService } from '../services/astService';
 import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon } from './icons';
-import { motion, PanInfo } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface AgentBubbleProps {
   asset: ActiveAssetInstance;
-  isDraggable: boolean;
-  scale?: number;
-  onDragEnd?: (assetId: string, info: PanInfo) => void;
 }
 
 const cardVariants = {
@@ -33,7 +30,7 @@ const LiveClockPreview: React.FC = () => {
     );
 };
 
-const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, isDraggable, scale = 1, onDragEnd }) => {
+const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
   const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
 
@@ -52,6 +49,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, isDraggable, scale = 1
   }
 
   const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent click from triggering when a button inside is clicked
     if ((e.target as HTMLElement).closest('button')) {
         return;
     }
@@ -114,54 +112,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, isDraggable, scale = 1
   
   const isMinimalPreview = agentDef.size === 'small';
 
-  const sizeClasses = {
-    small: 'w-48 h-32',
-    medium: 'w-80 h-48',
-    full: 'w-[480px] h-72',
-  };
-  const canvasSizeClass = sizeClasses[agentDef.size || 'medium'];
-
-  // Simplified view for when zoomed out on canvas
-  if (isDraggable && scale < 0.4) {
-    return (
-        <motion.div
-            layoutId={`asset-bubble-${asset.id}`}
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="absolute p-2 flex flex-col items-center justify-center bg-card-glass rounded-full shadow-md cursor-pointer"
-            role="button"
-            style={{ 
-                left: asset.position.x, 
-                top: asset.position.y,
-                width: 80,
-                height: 80,
-            }}
-             onClick={handleCardClick}
-             drag
-             onDragEnd={(e, info) => onDragEnd && onDragEnd(asset.id, info)}
-             dragMomentum={false}
-        >
-            <agentDef.icon className="w-8 h-8 text-foreground" />
-            <p className="text-xs text-foreground mt-1 truncate w-full text-center">{asset.name}</p>
-        </motion.div>
-    );
-  }
-
-  const dragProps = (isDraggable && onDragEnd) ? {
-      drag: true,
-      onDragEnd: (e: Event, info: PanInfo) => onDragEnd(asset.id, info),
-      dragMomentum: false,
-      onDragStart: (e: Event) => e.stopPropagation(), // Prevent canvas pan while dragging bubble
-  } : {};
-
-  const containerClasses = [
-    'bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-primary/30',
-    isDraggable ? `absolute ${canvasSizeClass}` : 'relative w-full h-full'
-  ].join(' ');
-
-  const positionStyle = isDraggable ? { left: asset.position.x, top: asset.position.y } : {};
+  const containerClasses = 'relative w-full h-full bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-primary/30';
 
   return (
     <motion.div
@@ -171,13 +122,10 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, isDraggable, scale = 1
       animate="visible"
       exit="exit"
       transition={{ type: 'spring', duration: 0.5 }}
-      whileHover={{ scale: isDraggable ? 1.02 : 1, transition: { type: 'spring', duration: 0.2 } }}
       className={containerClasses}
-      style={positionStyle}
       onClick={handleCardClick}
       aria-label={`打开 ${asset.name}`}
       role="button"
-      {...dragProps}
     >
       <header data-is-bubble-header="true" className="flex justify-between items-start mb-3 flex-shrink-0">
         <div className="flex items-center space-x-3 min-w-0">

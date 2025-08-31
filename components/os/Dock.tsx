@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOS } from '../../contexts/OSContext';
-import { SparklesIcon, SettingsIcon, PlusIcon, ClockIcon, TrashIcon, UploadIcon } from '../../assets/icons';
+import { SparklesIcon, SettingsIcon, PlusIcon, ClockIcon, TrashIcon, UploadIcon, GridIcon } from '../../assets/icons';
 import { ModalType } from '../../types';
 import Settings from './Settings';
 import AgentLibrary from './AgentLibrary';
@@ -64,10 +64,15 @@ const InsightHistoryModal: React.FC = () => {
 
 
 const Dock: React.FC = () => {
-  const { osState, setActiveModal, setAIPanelState } = useOS();
+  const { osState, setActiveModal, setAIPanelState, setCurrentView } = useOS();
 
   const handleAIToggle = () => {
     setAIPanelState(osState.ui.aiPanelState === 'panel' ? 'closed' : 'panel');
+  }
+
+  const handleViewToggle = () => {
+    const nextView = osState.ui.currentView === 'desktop' ? 'glance' : 'desktop';
+    setCurrentView(nextView);
   }
 
   return (
@@ -85,12 +90,15 @@ const Dock: React.FC = () => {
                 layoutId="ai-input-bar"
                 className="flex items-center justify-center p-2 bg-glass backdrop-blur-xl rounded-3xl shadow-lg"
               >
-                 <div className="flex items-center space-x-4">
+                 <div className="flex items-center space-x-2">
                   <DockButton onClick={handleAIToggle} aria-label="打开AI助手">
                       <SparklesIcon className="w-8 h-8" />
                   </DockButton>
                    <DockButton onClick={() => setActiveModal(ModalType.AGENT_LIBRARY)} aria-label="创建新资产">
                       <PlusIcon className="w-7 h-7" />
+                  </DockButton>
+                  <DockButton onClick={handleViewToggle} aria-label="切换视图">
+                      <GridIcon className="w-7 h-7" />
                   </DockButton>
                   <DockButton onClick={() => setActiveModal(ModalType.SETTINGS)} aria-label="打开设置">
                       <SettingsIcon className="w-7 h-7" />

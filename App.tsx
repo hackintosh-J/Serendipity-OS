@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React from 'react';
 import { OSProvider, useOS } from './contexts/OSContext';
 import SystemBar from './components/os/SystemBar';
 import Desktop from './components/os/Desktop';
@@ -6,21 +6,22 @@ import Dock from './components/os/Dock';
 import WindowManager from './components/os/WindowManager';
 import AIPanel from './components/os/AICompanion';
 import ControlCenter from './components/os/ControlCenter';
+import GlanceView from './components/os/GlanceView';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MainViewport: React.FC = () => {
   const { osState } = useOS();
-  const { ui: { aiPanelState, isControlCenterOpen } } = osState;
+  const { ui: { aiPanelState, isControlCenterOpen, currentView } } = osState;
   const isAiPanelOpen = aiPanelState === 'panel';
 
   return (
     <motion.div
-      className="flex-grow relative overflow-hidden" // Added overflow-hidden
+      className="flex-grow relative overflow-hidden"
       animate={{ paddingBottom: isAiPanelOpen ? '45vh' : '6rem' }}
       transition={{ type: 'spring', damping: 30, stiffness: 200 }}
     >
       <main className="absolute inset-0 bg-transparent">
-        <Desktop />
+        {currentView === 'desktop' ? <Desktop /> : <GlanceView />}
         
         <AnimatePresence>
           {osState.ui.viewingAssetId && <WindowManager />}

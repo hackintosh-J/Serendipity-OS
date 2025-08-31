@@ -1,7 +1,7 @@
 
 
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 
 const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作系统的核心AI助手。
 你的任务是理解用户的自然语言指令，并将其转换为一个JSON对象，该对象描述了要执行的操作。
@@ -189,16 +189,15 @@ class GeminiService {
         return summary;
     });
 
-    const finalSystemInstruction = insightSystemInstruction.replace(
-        '{ACTIVE_ASSETS_JSON}',
-        JSON.stringify(summarizedAssets, null, 2)
-    );
+    const summarizedAssetsString = JSON.stringify(summarizedAssets, null, 2);
+
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash-preview-image-generation",
+            model: "gemini-2.5-flash", // Use text model for insight content and image prompt
             contents: "请根据我的资产，为我创造一个“洞察力”。",
             config: {
-                systemInstruction: finalSystemInstruction,
+                systemInstruction: insightSystemInstruction.replace('{ACTIVE_ASSETS_JSON}', summarizedAssetsString),
+                responseMimeType: "application/json",
             }
         });
         
@@ -240,20 +239,32 @@ class GeminiService {
   public async generateImage(prompt: string, apiKey: string): Promise<string | null> {
     try {
         const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: prompt,
+        // Use the model requested by the user, which requires a multimodal response.
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.0-flash-preview-image-generation',
+            contents: {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
             config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '9:16', // Portrait for mobile wallpaper
+                // The error message indicated this model requires both modalities in the response.
+                responseModalities: [Modality.IMAGE, Modality.TEXT],
             },
         });
 
-        if (response.generatedImages && response.generatedImages.length > 0) {
-            return response.generatedImages[0].image.imageBytes;
+        // Extract the image data from the response parts.
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return part.inlineData.data; // This is the base64 string
+            }
         }
+        
+        console.warn('Image generation request did not return an image.');
         return null;
+
     } catch(error) {
         console.error("Error generating image: ", error);
         return null;

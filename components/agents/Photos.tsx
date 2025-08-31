@@ -5,6 +5,7 @@ import { AgentComponentProps } from '../../types';
 import { ImageIcon, XIcon, TrashIcon } from '../../assets/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { storageService } from '../../services/storageService';
+import Button from '../shared/Button';
 
 interface Photo {
     id: string;
@@ -48,6 +49,7 @@ const PhotosAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) =
     const { photos = [] } = instance.state;
     const [viewingPhoto, setViewingPhoto] = useState<Photo | null>(null);
     const [fullImageUrl, setFullImageUrl] = useState<string | null>(null);
+    const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -66,15 +68,23 @@ const PhotosAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) =
     }, [viewingPhoto]);
 
     const handleDeletePhoto = async (photoId: string, storageKey: string) => {
-        if(window.confirm("您确定要删除这张照片吗？")) {
-            await storageService.deleteItem(storageKey);
-            const updatedPhotos = photos.filter((p: any) => p.id !== photoId);
-            updateState({ ...instance.state, photos: updatedPhotos });
-            if (viewingPhoto?.id === photoId) {
-                setViewingPhoto(null);
-            }
-        }
+        await storageService.deleteItem(storageKey);
+        const updatedPhotos = photos.filter((p: any) => p.id !== photoId);
+        updateState({ ...instance.state, photos: updatedPhotos });
+        setIsConfirmingDelete(false);
+        setViewingPhoto(null);
     };
+
+    const requestDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsConfirmingDelete(true);
+    };
+
+    const cancelDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsConfirmingDelete(false);
+    };
+
 
     return (
         <div className="w-full h-full flex flex-col -m-4 bg-background">
@@ -104,11 +114,15 @@ const PhotosAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) =
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={() => setViewingPhoto(null)}
+                        onClick={cancelDelete}
                     >
                         <motion.div 
                              layoutId={`photo-${viewingPhoto.id}`}
                              className="w-full h-full flex items-center justify-center"
+                             onClick={(e) => {
+                                 e.stopPropagation();
+                                 if (!isConfirmingDelete) setViewingPhoto(null);
+                             }}
                         >
                         {fullImageUrl ? (
                             <img 
@@ -126,19 +140,39 @@ const PhotosAgent: React.FC<AgentComponentProps> = ({ instance, updateState }) =
                             </div>
                         )}
                         </motion.div>
-                        <button onClick={() => setViewingPhoto(null)} className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/40">
-                            <XIcon className="w-6 h-6" />
-                        </button>
-                         <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeletePhoto(viewingPhoto.id, viewingPhoto.storageKey);
-                            }} 
-                            className="absolute bottom-4 right-4 p-3 bg-destructive/80 rounded-full text-white hover:bg-destructive"
-                            aria-label="删除照片"
-                        >
-                            <TrashIcon className="w-6 h-6" />
-                        </button>
+                        
+                        <AnimatePresence>
+                            {isConfirmingDelete ? (
+                                <motion.div 
+                                    className="absolute inset-0 bg-black/60 flex items-center justify-center p-4"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                >
+                                    <div className="bg-card p-6 rounded-lg shadow-xl text-card-foreground w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                                        <h3 className="font-bold text-lg mb-2">确认删除</h3>
+                                        <p className="text-sm text-muted-foreground mb-6">此操作无法撤销。您确定要永久删除这张照片吗？</p>
+                                        <div className="flex justify-end space-x-3">
+                                            <Button onClick={cancelDelete} variant="secondary">取消</Button>
+                                            <Button onClick={() => handleDeletePhoto(viewingPhoto.id, viewingPhoto.storageKey)} className="bg-destructive hover:bg-destructive/90 focus:ring-destructive text-white">确认删除</Button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <>
+                                    <button onClick={() => setViewingPhoto(null)} className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/40">
+                                        <XIcon className="w-6 h-6" />
+                                    </button>
+                                    <button 
+                                        onClick={requestDelete} 
+                                        className="absolute bottom-4 right-4 p-3 bg-destructive/80 rounded-full text-white hover:bg-destructive"
+                                        aria-label="删除照片"
+                                    >
+                                        <TrashIcon className="w-6 h-6" />
+                                    </button>
+                                </>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
                 )}
             </AnimatePresence>

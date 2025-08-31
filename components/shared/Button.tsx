@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
   variant?: 'primary' | 'secondary';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.FC<{ className?: string }>;

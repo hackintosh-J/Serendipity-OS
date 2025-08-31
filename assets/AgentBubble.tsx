@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActiveAssetInstance } from '../types';
 import { useOS } from '../contexts/OSContext';
 import { astService } from '../services/astService';
-import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon } from './icons';
-import { motion } from 'framer-motion';
+import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, ImageIcon } from './icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { storageService } from '../services/storageService';
 
 interface AgentBubbleProps {
   asset: ActiveAssetInstance;
@@ -31,9 +32,55 @@ const LiveClockPreview: React.FC = () => {
     );
 };
 
+const PhotosPreview: React.FC<{ photos: { storageKey: string }[] }> = ({ photos }) => {
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const recentPhotos = photos.slice(-4).reverse();
+
+    useEffect(() => {
+        let isMounted = true;
+        const fetchImages = async () => {
+            const urls = await Promise.all(
+                recentPhotos.map(p => storageService.getItem<string>(p.storageKey))
+            );
+            if (isMounted) {
+                setImageUrls(urls.filter((url): url is string => !!url));
+            }
+        };
+        if (recentPhotos.length > 0) {
+            fetchImages();
+        }
+        return () => { isMounted = false; };
+    }, [JSON.stringify(recentPhotos.map(p => p.storageKey))]);
+
+    if (photos.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <ImageIcon className="w-10 h-10 mx-auto mb-2 text-primary" />
+                <p className="text-sm">相册为空</p>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="grid grid-cols-2 gap-1 w-full h-full p-1">
+            {recentPhotos.map((photo, index) => (
+                <div key={photo.storageKey || index} className="aspect-square bg-secondary rounded-md overflow-hidden">
+                    {imageUrls[index] ? (
+                        <img src={imageUrls[index]} className="w-full h-full object-cover" alt="photo preview" />
+                    ) : (
+                        <div className="w-full h-full bg-secondary animate-pulse"></div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+
 const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
   const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,13 +91,22 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`您确定要删除“${asset.name}”吗？此操作无法撤销。`)) {
-        deleteAsset(asset.id);
-    }
+    setIsConfirmingDelete(true);
   }
+  
+  const confirmDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      deleteAsset(asset.id);
+      setIsConfirmingDelete(false);
+  };
+
+  const cancelDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsConfirmingDelete(false);
+  };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button, input, a')) {
+    if ((e.target as HTMLElement).closest('button, input, a') || isConfirmingDelete) {
         return;
     }
     viewAsset(asset.id);
@@ -168,6 +224,10 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
         case 'agent.system.insight': {
             return <p className="text-sm text-muted-foreground italic">{asset.state.content || 'AI正在为您准备惊喜...'}</p>;
         }
+        case 'agent.system.photos': {
+            const photos = asset.state.photos || [];
+            return <PhotosPreview photos={photos} />;
+        }
         default:
             return <p className="text-sm text-muted-foreground">无法显示预览。</p>
     }
@@ -195,6 +255,23 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
         aria-label={`打开 ${asset.name}`}
         role="button"
       >
+        <AnimatePresence>
+        {isConfirmingDelete && (
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-destructive/90 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center p-4 z-10 text-white text-center"
+            >
+                <p className="font-semibold mb-4">确定要删除“{asset.name}”吗？</p>
+                <div className="flex space-x-3">
+                    <button onClick={cancelDelete} className="px-4 py-1.5 bg-white/20 rounded-md text-sm font-medium hover:bg-white/40 transition-colors">取消</button>
+                    <button onClick={confirmDelete} className="px-4 py-1.5 bg-white text-destructive rounded-md text-sm font-bold hover:bg-gray-200 transition-colors">删除</button>
+                </div>
+            </motion.div>
+        )}
+        </AnimatePresence>
+
         <header className="flex justify-between items-start mb-3 flex-shrink-0">
           <div className="flex items-center space-x-3 min-w-0">
             {!isMinimalPreview && (

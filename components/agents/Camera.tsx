@@ -15,14 +15,32 @@ const CameraAgent: React.FC<AgentComponentProps> = ({ close, dispatch, osState }
 
     const startCamera = useCallback(async () => {
         try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setError("您的浏览器不支持相机功能。");
+                return;
+            }
+            
+            // Check permission status first to provide better feedback
+            const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+
+            if (permissionStatus.state === 'denied') {
+                setError("相机权限已被禁用。请在浏览器或系统设置中启用它。");
+                return;
+            }
+
             const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             setStream(mediaStream);
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }
+            setError(null); // Clear previous errors
         } catch (err) {
             console.error("Error accessing camera:", err);
-            setError("无法访问相机。请检查权限设置。");
+            if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
+                setError("相机访问被拒绝。请授予权限以使用此功能。");
+            } else {
+                setError("无法访问相机。请检查设备和权限设置。");
+            }
         }
     }, []);
 
@@ -34,11 +52,13 @@ const CameraAgent: React.FC<AgentComponentProps> = ({ close, dispatch, osState }
     }, [stream]);
 
     useEffect(() => {
-        startCamera();
+        if (!capturedImage) {
+            startCamera();
+        }
         return () => {
             stopCamera();
         };
-    }, [startCamera, stopCamera]);
+    }, [capturedImage, startCamera, stopCamera]);
     
     const handleCapture = () => {
         if (videoRef.current && canvasRef.current) {
@@ -58,7 +78,7 @@ const CameraAgent: React.FC<AgentComponentProps> = ({ close, dispatch, osState }
     
     const handleRetake = () => {
         setCapturedImage(null);
-        startCamera();
+        // The useEffect will call startCamera()
     };
 
     const handleSave = async () => {
@@ -104,7 +124,7 @@ const CameraAgent: React.FC<AgentComponentProps> = ({ close, dispatch, osState }
     };
 
     if (error) {
-        return <div className="w-full h-full flex items-center justify-center text-destructive text-center p-4">{error}</div>;
+        return <div className="w-full h-full flex items-center justify-center text-destructive text-center p-4 -m-4 bg-background">{error}</div>;
     }
 
     return (

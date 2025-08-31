@@ -73,7 +73,7 @@ const GlanceBubble: React.FC<GlanceBubbleProps> = ({ asset, agent, isExpanded, o
                         className="flex flex-col items-center justify-center text-center"
                     >
                         <agent.icon className="w-1/3 h-1/3 text-foreground" />
-                        <p className="text-xs font-medium text-foreground truncate w-full px-1 mt-2">{asset.name}</p>
+                        <p className="text-xs font-medium text-foreground truncate w-full px-1 mt-2">{asset.name.length > 5 ? asset.name.substring(0, 5) : asset.name}</p>
                     </motion.div>
                 )}
             </AnimatePresence>

@@ -1,8 +1,9 @@
 
+
 import React, { useState, useRef, ChangeEvent } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { motion } from 'framer-motion';
-import { SparklesIcon, ClockIcon, MoonIcon, SunIcon, UploadIcon, DownloadIcon } from '../../assets/icons';
+import { SparklesIcon, ClockIcon, MoonIcon, SunIcon, UploadIcon, DownloadIcon, LayoutGridIcon } from '../../assets/icons';
 import { ModalType } from '../../types';
 import { astService } from '../../services/astService';
 import { themes } from '../../styles/themes';
@@ -22,7 +23,7 @@ const panelVariants = {
 };
 
 const ControlCenter: React.FC = () => {
-  const { osState, dispatch, setControlCenterOpen, toggleThemeMode, triggerInsightGeneration, setActiveModal, setTheme } = useOS();
+  const { osState, dispatch, setControlCenterOpen, toggleThemeMode, triggerInsightGeneration, setActiveModal, setTheme, autoOrganizeDesktop } = useOS();
   const { settings } = osState;
   const isDarkMode = settings.themeMode === 'dark';
 
@@ -45,6 +46,11 @@ const ControlCenter: React.FC = () => {
 
   const handleShowHistory = () => {
     setActiveModal(ModalType.INSIGHT_HISTORY);
+    handleClose();
+  };
+
+  const handleOrganizeDesktop = () => {
+    autoOrganizeDesktop();
     handleClose();
   };
   
@@ -107,6 +113,7 @@ const ControlCenter: React.FC = () => {
                     <ControlButton icon={SparklesIcon} label="获取新洞察" onClick={handleGetInsight} />
                     <ControlButton icon={ClockIcon} label="历史洞察" onClick={handleShowHistory} />
                     <ControlButton icon={isDarkMode ? SunIcon : MoonIcon} label={isDarkMode ? '浅色' : '深色'} active={isDarkMode} onClick={toggleThemeMode} />
+                    <ControlButton icon={LayoutGridIcon} label="整理桌面" onClick={handleOrganizeDesktop} />
                 </div>
                 
                 {/* Personalization Section */}

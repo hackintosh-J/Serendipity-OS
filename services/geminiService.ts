@@ -139,6 +139,7 @@ JSON输出格式:
    - 'image_prompt': (必需) 一个详细的、富有想象力的图片生成提示 (英文为佳，以便生成高质量图片)。例如: "A breathtaking view of a futuristic city with flying vehicles at sunset, beautiful pink and orange clouds, digital art, highly detailed, cinematic lighting."
 
 规则:
+- 'title' 字段的长度必须小于或等于5个字符。
 - 保持积极、有益和简洁。
 - 不要重复你以前给出的想法。每次都要有新意。
 - 你的回应必须总是遵循指定的JSON格式。
@@ -193,15 +194,42 @@ class GeminiService {
     );
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-flash-image-preview",
             contents: "请根据我的资产，为我创造一个“洞察力”。",
             config: {
                 systemInstruction: finalSystemInstruction,
-                responseMimeType: "application/json",
             }
         });
-        const jsonString = response.text;
-        return JSON.parse(jsonString);
+        
+        const responseText = response.text;
+        
+        const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+        const match = responseText.match(jsonRegex);
+        
+        let jsonString = match ? match[1].trim() : null;
+
+        if (!jsonString) {
+            // Fallback for raw JSON without code fences
+            const jsonStartIndex = responseText.indexOf('{');
+            const jsonEndIndex = responseText.lastIndexOf('}');
+            if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
+                jsonString = responseText.substring(jsonStartIndex, jsonEndIndex + 1);
+            }
+        }
+        
+        if (jsonString) {
+            try {
+                return JSON.parse(jsonString);
+            } catch (parseError: any) {
+                 console.error("Failed to parse insight JSON:", parseError);
+                 console.error("Received string:", jsonString);
+                 return { type: 'error', content: `AI返回了无效的JSON洞察: ${parseError.message}` };
+            }
+        } else {
+            console.error("No JSON found in insight response:", responseText);
+            return { type: 'error', content: 'AI未能生成有效的洞察内容。' };
+        }
+
     } catch (error: any) {
         console.error("Gemini insight generation error:", error);
         return { type: 'error', content: `AI洞察生成失败: ${error.message}` };
@@ -270,15 +298,35 @@ class GeminiService {
             '{ACTIVE_ASSETS_JSON}',
             contextForAI
         );
+        
+    // Configuration selection based on prompt.
+    // For simpler, faster tasks (lightweight), disable the thinking feature of gemini-2.5-flash.
+    // For more complex queries (advanced), enable thinking for higher quality responses.
+    const lightweightKeywords = [
+        '整理', '布局', '排列', '移动', '放在', // Desktop organization
+        '天气', // Weather
+        '备忘录', '记一下', // Memo
+        '待办', '提醒我', '任务', // Todo
+        '计算', // Calculator
+        '时间', '时钟', // Clock
+    ];
+    const isLightweightTask = lightweightKeywords.some(keyword => prompt.includes(keyword));
+
+    const modelConfig: any = {
+        systemInstruction: finalSystemInstruction,
+        responseMimeType: "application/json",
+    };
+
+    if (isLightweightTask) {
+        modelConfig.thinkingConfig = { thinkingBudget: 0 };
+    }
+
 
     try {
         const responseStream = await ai.models.generateContentStream({
             model: "gemini-2.5-flash",
             contents: prompt,
-            config: {
-                systemInstruction: finalSystemInstruction,
-                responseMimeType: "application/json",
-            }
+            config: modelConfig,
         });
 
         let fullText = '';

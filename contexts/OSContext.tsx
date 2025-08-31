@@ -241,6 +241,7 @@ interface IOSContext {
   deleteArchivedInsight: (assetId: string) => void;
   restoreArchivedInsight: (assetId: string) => void;
   isAIBusy: boolean;
+  autoOrganizeDesktop: () => void;
 }
 
 const OSContext = createContext<IOSContext | undefined>(undefined);
@@ -512,7 +513,7 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   return (
-    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleThemeMode, setTheme, triggerInsightGeneration, deleteArchivedInsight, restoreArchivedInsight, isAIBusy: osState.ui.isAIBusy }}>
+    <OSContext.Provider value={{ osState, dispatch, createAsset, deleteAsset, viewAsset, closeAssetView, setActiveModal, setAIPanelState, setControlCenterOpen, setCurrentView, toggleThemeMode, setTheme, triggerInsightGeneration, deleteArchivedInsight, restoreArchivedInsight, isAIBusy: osState.ui.isAIBusy, autoOrganizeDesktop }}>
       {children}
     </OSContext.Provider>
   );

@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useEffect, useMemo } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
@@ -118,15 +119,11 @@ const Desktop: React.FC = () => {
                            const itemClass = sizeClasses[agentDef.size || 'medium'];
 
                            return (
-                               <Reorder.Item
+                               <AgentBubble
                                    key={asset.id}
-                                   value={asset}
+                                   asset={asset}
                                    className={itemClass}
-                                   // Custom drag listener to avoid conflict with page swipe
-                                   dragListener={false}
-                               >
-                                   <AgentBubble asset={asset} />
-                               </Reorder.Item>
+                               />
                            )
                        })}
                     </Reorder.Group>

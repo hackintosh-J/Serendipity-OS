@@ -1,13 +1,15 @@
 
+
 import React from 'react';
 import { ActiveAssetInstance } from '../types';
 import { useOS } from '../contexts/OSContext';
 import { astService } from '../services/astService';
-import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, GripVerticalIcon } from './icons';
-import { motion, useDragControls } from 'framer-motion';
+import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon } from './icons';
+import { motion, useDragControls, Reorder } from 'framer-motion';
 
 interface AgentBubbleProps {
   asset: ActiveAssetInstance;
+  className?: string;
 }
 
 const cardVariants = {
@@ -31,7 +33,7 @@ const LiveClockPreview: React.FC = () => {
     );
 };
 
-const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
+const AgentBubble: React.FC<AgentBubbleProps> = ({ asset, className }) => {
   const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
   const dragControls = useDragControls();
@@ -182,54 +184,66 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
   const containerClasses = 'relative w-full h-full bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 flex flex-col transition-shadow duration-300';
 
   return (
-    <motion.div
+    <Reorder.Item
+      value={asset}
+      as="div"
+      className={className}
+      dragListener={false}
+      dragControls={dragControls}
       layoutId={`asset-bubble-${asset.id}`}
       variants={cardVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
-      dragListener={false}
-      dragControls={dragControls}
       transition={{ type: 'spring', duration: 0.5 }}
-      className={containerClasses}
-      onClick={handleCardClick}
-      aria-label={`打开 ${asset.name}`}
-      role="button"
       whileDrag={{ scale: 1.05, boxShadow: '0px 10px 30px rgba(0,0,0,0.2)' }}
     >
-      <header data-is-bubble-header="true" className="flex justify-between items-start mb-3 flex-shrink-0">
-        <div className="flex items-center space-x-3 min-w-0">
-          {!isMinimalPreview && (
-            <div className="w-10 h-10 bg-secondary rounded-lg shadow-inner flex items-center justify-center flex-shrink-0">
-              <agentDef.icon className="w-6 h-6 text-secondary-foreground" />
-            </div>
-          )}
-          <h3 className="font-semibold text-card-foreground truncate">{asset.name}</h3>
-        </div>
-        <div className="flex items-center space-x-0.5 flex-shrink-0 ml-2">
-             <div
-              data-reorder-handle
-              onPointerDown={(e) => dragControls.start(e)}
-              className="p-2 cursor-grab active:cursor-grabbing rounded-full text-muted-foreground hover:bg-secondary"
-              aria-label={`拖拽 ${asset.name}`}
+      <div
+        className={containerClasses}
+        onClick={handleCardClick}
+        aria-label={`打开 ${asset.name}`}
+        role="button"
+      >
+        <header
+          data-reorder-handle
+          onPointerDown={(e) => {
+              if ((e.target as HTMLElement).closest('button')) return;
+              e.preventDefault();
+              dragControls.start(e);
+          }}
+          className="flex justify-between items-start mb-3 flex-shrink-0 cursor-grab active:cursor-grabbing"
+        >
+          <div className="flex items-center space-x-3 min-w-0">
+            {!isMinimalPreview && (
+              <div className="w-10 h-10 bg-secondary rounded-lg shadow-inner flex items-center justify-center flex-shrink-0">
+                <agentDef.icon className="w-6 h-6 text-secondary-foreground" />
+              </div>
+            )}
+            <h3 className="font-semibold text-card-foreground truncate">{asset.name}</h3>
+          </div>
+          <div className="flex items-center space-x-0.5 flex-shrink-0 ml-2">
+            <button
+              onClick={handleExport}
+              className="p-2 rounded-full text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+              aria-label={`导出 ${asset.name}`}
             >
-              <GripVerticalIcon className="w-4 h-4" />
-            </div>
-             <button
+              <DownloadIcon className="w-4 h-4" />
+            </button>
+            <button
               onClick={handleDelete}
               className="p-2 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
               aria-label={`删除 ${asset.name}`}
             >
               <TrashIcon className="w-4 h-4" />
             </button>
-        </div>
-      </header>
+          </div>
+        </header>
 
-      <main className={`flex-grow min-h-0 flex items-center ${isMinimalPreview ? 'justify-center' : ''} overflow-hidden`}>
-        <CardPreview />
-      </main>
-      
-    </motion.div>
+        <main className={`flex-grow min-h-0 flex items-center ${isMinimalPreview ? 'justify-center' : ''} overflow-hidden`}>
+          <CardPreview />
+        </main>
+      </div>
+    </Reorder.Item>
   );
 };
 

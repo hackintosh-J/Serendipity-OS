@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { geminiService } from '../../services/geminiService';
 import { AgentDefinition } from '../../types';
-import { SparklesIcon, ChevronDownIcon, SendIcon } from '../../assets/icons';
+import { SparklesIcon, ChevronDownIcon, SendIcon, HelpCircleIcon, ICONS, IconName } from '../../assets/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI } from "@google/genai";
 
@@ -71,6 +71,37 @@ const AIPanel: React.FC = () => {
           for (const actionItem of actions) {
             const { action, payload } = actionItem;
             switch (action) {
+              case 'CREATE_AGENT':
+                try {
+                    const IconComponent = ICONS[payload.iconName as IconName] || HelpCircleIcon;
+                    const ComponentFunction = new Function('React', 'instance', 'updateState', 'close', 'dispatch', 'osState',
+                        `return (function(props) { 
+                            const { instance, updateState, close, dispatch, osState } = props; 
+                            ${payload.componentFunctionBody} 
+                        })`
+                    )(React);
+
+                    const newAgent: AgentDefinition = {
+                        id: payload.id,
+                        name: payload.name,
+                        description: payload.description,
+                        icon: IconComponent,
+                        iconName: payload.iconName,
+                        component: ComponentFunction,
+                        defaultState: payload.defaultState,
+                        size: payload.size,
+                        windowScroll: payload.windowScroll,
+                        isDeletable: true,
+                        componentFunctionBody: payload.componentFunctionBody,
+                    };
+
+                    dispatch({ type: 'INSTALL_AGENT', payload: newAgent });
+                    responseTexts.push(`我已经为您开发并安装了新的“${payload.name}”代理！您现在可以从“创建新资产”列表中使用它。`);
+                } catch (e) {
+                    console.error("Failed to create new agent:", e);
+                    responseTexts.push(`抱歉，在尝试为您创建新代理时发生了错误: ${e instanceof Error ? e.message : 'Unknown error'}`);
+                }
+                break;
               case 'GENERATE_INSIGHT':
                   triggerInsightGeneration();
                   responseTexts.push(`好的，我正在为您准备一个新的洞察...完成后它会出现在您的桌面上。`);

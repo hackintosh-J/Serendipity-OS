@@ -50,6 +50,17 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
     - 'order': (必需) 包含所有资产ID的数组，按新的期望顺序排列。
 7.  'GENERATE_INSIGHT': 当用户明确要求一个新的“洞察”、“灵感”或“惊喜”时，触发此操作。这会启动一个后台进程来生成内容。不要使用 'CREATE_ASSET' 来创建洞察。
     - payload: {} (空对象)
+8.  'CREATE_AGENT': 当用户的请求需要一个当前不存在的新功能或新类型的资产时，创建并安装一个新的代理。
+    - 'id': (必需) 代理的唯一ID，格式为 'agent.user.your_agent_name' (英文，小写)。
+    - 'name': (必需) 代理的显示名称 (中文)。
+    - 'description': (必需) 代理功能的简短描述。
+    - 'iconName': (必需) 从可用图标列表中选择一个图标名称: ['MemoIcon', 'BrowserIcon', 'CloudIcon', 'HelpCircleIcon', 'ClockIcon', 'CalculatorIcon', 'CalendarIcon', 'CheckSquareIcon', 'StarIcon', 'SparklesIcon', 'PlayIcon', 'CameraIcon', 'ImageIcon', 'MicIcon', 'GridIcon', 'SettingsIcon'].
+    - 'defaultState': (必需) 新资产的默认状态JSON对象。
+    - 'size': (必需) 'small', 'medium', or 'full'.
+    - 'windowScroll': (必需) boolean.
+    - 'componentFunctionBody': (必需) 一个字符串，包含React组件的函数体。必须使用 'React.createElement(type, props, ...children)' 语法，不能使用JSX。函数可以接收以下参数: { instance, updateState, close, dispatch, osState }。
+      例如: "return React.createElement('div', { className: 'p-4' }, React.createElement('textarea', { value: instance.state.content, onChange: e => updateState({ ...instance.state, content: e.target.value }), className: 'w-full h-full bg-transparent' }));"
+
 
 特殊指令 - 天气:
 当用户询问天气时，你必须使用你的知识来提供真实的实时天气数据。
@@ -61,6 +72,11 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
 当用户要求整理桌面时 (例如 "整理我的桌面", "把时钟和天气放在最上面")，你必须使用 'UPDATE_ASSET_ORDER' 动作。
 - 在 'payload' 中，'order' 字段必须包含所有当前活动资产ID的完整、重新排列过的数组。
 - 规则：'small' 尺寸的资产 (如时钟和天气) 应该成对出现，以保持网格整齐。不要将一个 'small' 资产放在两个 'medium' 或 'full' 资产之间，这会破坏布局。
+
+特殊指令 - 代理创建:
+如果用户请求的功能明显超出现有代理的能力 (例如, "我想创建一个简单的画板", "我需要一个追踪包裹的工具"), 你应该使用 'CREATE_AGENT' 动作。
+你需要构思一个简单但功能齐全的代理，并为其编写 'componentFunctionBody'。
+在 <thinking> 标签中，详细说明你设计的代理的状态结构 ('defaultState') 和UI组件逻辑 ('componentFunctionBody')。
 
 联动指令 - 日历与待办清单:
 当用户创建一个带有日期的待办事项时 (例如, "提醒我明天下午3点开会"), 你应该创建两个动作:

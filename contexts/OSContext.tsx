@@ -1,11 +1,13 @@
 
 
+
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import { OSState, OSAction, ActiveAssetInstance, ModalType, AIPanelState } from '../types';
 import { INITIAL_OS_STATE } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { themes, applyTheme } from '../styles/themes';
 import { storageService } from '../services/storageService';
+import { ICONS, IconName, HelpCircleIcon } from '../assets/icons';
 
 const OS_STATE_LOCAL_STORAGE_KEY = 'serendipity_os_state';
 
@@ -179,7 +181,29 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
     
     case 'SET_INSIGHT_STATUS':
         return { ...state, ui: { ...state.ui, insightGenerationStatus: action.payload.status, insightGenerationMessage: action.payload.message } };
+    
+    case 'INSTALL_AGENT': {
+      const newAgentDef = action.payload;
+      return {
+        ...state,
+        installedAgents: {
+          ...state.installedAgents,
+          [newAgentDef.id]: newAgentDef,
+        },
+      };
+    }
 
+    case 'UNINSTALL_AGENT': {
+      const { agentId } = action.payload;
+      const newInstalledAgents = { ...state.installedAgents };
+      if (newInstalledAgents[agentId]?.isDeletable) {
+        delete newInstalledAgents[agentId];
+      }
+      return {
+        ...state,
+        installedAgents: newInstalledAgents,
+      };
+    }
 
     case 'IMPORT_STATE': {
         const importedState = action.payload;
@@ -264,13 +288,39 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           );
         }
 
+        const userAgentsFromStorage = savedState.userInstalledAgents || {};
+        const rehydratedUserAgents: any = {};
+
+        for (const agentId in userAgentsFromStorage) {
+            const agentData = userAgentsFromStorage[agentId];
+            try {
+                const IconComponent = ICONS[agentData.iconName as IconName] || HelpCircleIcon;
+                // Safely create the component function from the stored string body
+                const ComponentFunction = new Function('React', 'instance', 'updateState', 'close', 'dispatch', 'osState',
+                    // This creates a wrapper function that accepts props and de-structures them for the inner body
+                    `return (function(props) { 
+                        const { instance, updateState, close, dispatch, osState } = props; 
+                        ${agentData.componentFunctionBody} 
+                    })`
+                )(React);
+
+                rehydratedUserAgents[agentId] = {
+                    ...agentData,
+                    icon: IconComponent,
+                    component: ComponentFunction,
+                };
+            } catch (e) {
+                console.error(`Failed to rehydrate agent component for ${agentId}:`, e);
+            }
+        }
+
         const rehydratedState: OSState = {
           ...INITIAL_OS_STATE,
           settings: { ...INITIAL_OS_STATE.settings, ...(savedState.settings || {}) },
           activeAssets: savedState.activeAssets || {},
           desktopAssetOrder: assetOrder,
           insightHistory: savedState.insightHistory || [],
-          installedAgents: INITIAL_OS_STATE.installedAgents,
+          installedAgents: { ...INITIAL_OS_STATE.installedAgents, ...rehydratedUserAgents },
           ui: { ...INITIAL_OS_STATE.ui }, // UI state is never persisted
         };
 
@@ -287,11 +337,21 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   useEffect(() => {
     if (osState.isInitialized) {
       try {
+        const userInstalledAgents: any = {};
+        Object.values(osState.installedAgents).forEach(agent => {
+            if (agent.isDeletable) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { component, icon, ...serializableAgent } = agent;
+                userInstalledAgents[agent.id] = serializableAgent;
+            }
+        });
+        
         const stateToSave = {
           settings: osState.settings,
           activeAssets: osState.activeAssets,
           desktopAssetOrder: osState.desktopAssetOrder,
           insightHistory: osState.insightHistory,
+          userInstalledAgents, // Save only user-created agents
         };
         localStorage.setItem(OS_STATE_LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
       } catch (error) {

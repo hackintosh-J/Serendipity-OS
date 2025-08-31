@@ -1,6 +1,8 @@
 
 
+
 import React from 'react';
+import { IconName } from './assets/icons';
 
 // The state for a single Active Asset (AA) instance
 export interface ActiveAssetInstance {
@@ -19,10 +21,13 @@ export interface AgentDefinition {
   name: string;
   description: string;
   icon: React.FC<{ className?: string }>;
+  iconName: IconName; // For serialization
   component: React.FC<AgentComponentProps>;
   defaultState: any;
   size?: 'small' | 'medium' | 'full'; // Added medium
   windowScroll?: boolean;
+  isDeletable?: boolean; // For AI-created agents
+  componentFunctionBody?: string; // For serializing AI-created components
 }
 
 // System-wide settings
@@ -90,7 +95,9 @@ export type OSAction =
   | { type: 'RESTORE_ARCHIVED_INSIGHT'; payload: { assetId: string } }
   | { type: 'UPDATE_ASSET_ORDER'; payload: string[] }
   | { type: 'SET_AI_BUSY'; payload: boolean }
-  | { type: 'SET_INSIGHT_STATUS'; payload: { status: 'idle' | 'generating' | 'error'; message: string | null } };
+  | { type: 'SET_INSIGHT_STATUS'; payload: { status: 'idle' | 'generating' | 'error'; message: string | null } }
+  | { type: 'INSTALL_AGENT'; payload: AgentDefinition }
+  | { type: 'UNINSTALL_AGENT'; payload: { agentId: string } };
 // Props for Agent components
 export interface AgentComponentProps {
     instance: ActiveAssetInstance;

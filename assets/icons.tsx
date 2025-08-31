@@ -53,4 +53,9 @@ export const ImageIcon = createIcon(<><rect x="3" y="3" width="18" height="18" r
 export const MicIcon = createIcon(<><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></>);
 export const LayoutGridIcon = createIcon(<><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></>);
 
+export const ICONS = {
+    MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon, PlayIcon, CameraIcon, ImageIcon, MicIcon, SettingsIcon, PlusIcon, GridIcon, LayoutGridIcon, DownloadIcon, UploadIcon, TrashIcon, XIcon,
+};
+export type IconName = keyof typeof ICONS;
+
 export default createIcon;

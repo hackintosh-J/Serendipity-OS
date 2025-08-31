@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // The state for a single Active Asset (AA) instance
@@ -6,7 +7,7 @@ export interface ActiveAssetInstance {
   agentId: string;
   name: string;
   state: any;
-  position: { x: number; y: number };
+  position: { x: number; y: number }; // Retained for potential future use, but not for grid desktop
   createdAt: string; // ISO 8601 date string
   updatedAt: string; // ISO 8601 date string
 }
@@ -33,7 +34,6 @@ export interface SystemSettings {
 
 export enum ModalType {
     NONE = 'NONE',
-    SETTINGS = 'SETTINGS',
     AGENT_LIBRARY = 'AGENT_LIBRARY',
     CREATE_ASSET_PROMPT = 'CREATE_ASSET_PROMPT',
     INSIGHT_HISTORY = 'INSIGHT_HISTORY',
@@ -58,6 +58,7 @@ export interface OSState {
   settings: SystemSettings;
   installedAgents: { [key: string]: AgentDefinition };
   activeAssets: { [key: string]: ActiveAssetInstance };
+  desktopAssetOrder: string[]; // <-- New property for draggable grid order
   insightHistory: ActiveAssetInstance[];
   ui: UIState;
 }
@@ -81,7 +82,8 @@ export type OSAction =
   | { type: 'SET_CURRENT_VIEW'; payload: 'desktop' | 'glance' }
   | { type: 'ARCHIVE_INSIGHT'; payload: { assetId: string } }
   | { type: 'DELETE_ARCHIVED_INSIGHT'; payload: { assetId: string } }
-  | { type: 'RESTORE_ARCHIVED_INSIGHT'; payload: { assetId: string } };
+  | { type: 'RESTORE_ARCHIVED_INSIGHT'; payload: { assetId: string } }
+  | { type: 'UPDATE_ASSET_ORDER'; payload: string[] }; // <-- New action type
 
 // Props for Agent components
 export interface AgentComponentProps {

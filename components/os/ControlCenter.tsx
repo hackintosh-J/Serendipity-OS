@@ -1,46 +1,89 @@
-import React from 'react';
-import { useOS } from '../../contexts/OSContext';
-// FIX: Remove `Variants` import as it's causing a type resolution error.
-import { motion } from 'framer-motion';
-import { XIcon, WifiIcon, BluetoothIcon, MoonIcon, SunIcon, SparklesIcon, ClockIcon } from '../../assets/icons';
-import { ModalType } from '../../types';
 
-// FIX: Removed `: Variants` type annotation.
+import React, { useState, useRef, ChangeEvent } from 'react';
+import { useOS } from '../../contexts/OSContext';
+import { motion } from 'framer-motion';
+import { SparklesIcon, ClockIcon, MoonIcon, SunIcon, UploadIcon, DownloadIcon } from '../../assets/icons';
+import { ModalType } from '../../types';
+import { astService } from '../../services/astService';
+import { themes } from '../../styles/themes';
+import Button from '../shared/Button';
+import Input from '../shared/Input';
+
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-  exit: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
 };
 
-// FIX: Removed `: Variants` type annotation.
 const panelVariants = {
-  hidden: { y: '-100%', opacity: 0.8 },
-  visible: { y: 0, opacity: 1, transition: { type: 'spring' as const, damping: 25, stiffness: 180 } },
-  exit: { y: '-100%', opacity: 0.8, transition: { type: 'spring' as const, damping: 25, stiffness: 180 } },
+  hidden: { y: '-100%' },
+  visible: { y: '0%', transition: { type: 'spring' as const, damping: 35, stiffness: 250 } },
+  exit: { y: '-100%', transition: { type: 'spring' as const, damping: 35, stiffness: 250 } },
 };
 
 const ControlCenter: React.FC = () => {
-  const { osState, setControlCenterOpen, toggleThemeMode, triggerInsightGeneration, setActiveModal } = useOS();
-  const isDarkMode = osState.settings.themeMode === 'dark';
+  const { osState, dispatch, setControlCenterOpen, toggleThemeMode, triggerInsightGeneration, setActiveModal, setTheme } = useOS();
+  const { settings } = osState;
+  const isDarkMode = settings.themeMode === 'dark';
+
+  const [userName, setUserName] = useState(settings.userName);
+  const [geminiApiKey, setGeminiApiKey] = useState(settings.geminiApiKey || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleClose = () => {
+    // Save any changed settings before closing
+    if (userName !== settings.userName || geminiApiKey !== settings.geminiApiKey) {
+        dispatch({ type: 'UPDATE_SETTINGS', payload: { userName, geminiApiKey } });
+    }
+    setControlCenterOpen(false);
+  };
+  
+  const handleGetInsight = () => {
+    triggerInsightGeneration();
+    handleClose();
+  };
+
+  const handleShowHistory = () => {
+    setActiveModal(ModalType.INSIGHT_HISTORY);
+    handleClose();
+  };
+  
+  const handleExport = () => {
+    astService.exportSystemState(osState);
+  };
+  
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm("导入状态将会合并到您当前的系统中。您确定要继续吗？")) {
+        return;
+    }
+
+    try {
+        const importedState = await astService.importStateFromFile(file);
+        dispatch({ type: 'IMPORT_STATE', payload: importedState });
+        alert("状态导入成功！");
+        handleClose();
+    } catch (error) {
+        console.error("Import failed:", error);
+        alert(`导入失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
 
   const ControlButton: React.FC<{ icon: React.FC<{className?: string}>; label: string; active?: boolean; onClick?: () => void; }> = ({ icon: Icon, label, active, onClick }) => (
     <div className="flex flex-col items-center space-y-2 cursor-pointer" onClick={onClick}>
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${active ? 'bg-accent text-accent-foreground' : 'bg-secondary/80 text-secondary-foreground'}`}>
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${active ? 'bg-primary text-primary-foreground' : 'bg-secondary/80 text-secondary-foreground'}`}>
             <Icon className="w-7 h-7" />
         </div>
         <span className="text-xs text-foreground">{label}</span>
     </div>
   );
-  
-  const handleGetInsight = () => {
-    triggerInsightGeneration();
-    setControlCenterOpen(false);
-  }
-
-  const handleShowHistory = () => {
-    setActiveModal(ModalType.INSIGHT_HISTORY);
-    setControlCenterOpen(false);
-  }
 
   return (
     <motion.div
@@ -48,41 +91,67 @@ const ControlCenter: React.FC = () => {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="absolute inset-0 bg-black/20 backdrop-blur-sm z-50"
-      onClick={() => setControlCenterOpen(false)}
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
+      onClick={handleClose}
     >
       <motion.div
         variants={panelVariants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-        className="absolute top-4 left-4 right-4 p-6 bg-card-glass backdrop-blur-2xl rounded-3xl shadow-2xl"
+        className="absolute inset-x-0 top-0"
         onClick={e => e.stopPropagation()}
       >
-        <div className="grid grid-cols-4 gap-4 mb-6">
-            <ControlButton icon={SparklesIcon} label="获取新洞察" onClick={handleGetInsight} />
-            <ControlButton icon={ClockIcon} label="历史洞察" onClick={handleShowHistory} />
-            <ControlButton icon={isDarkMode ? SunIcon : MoonIcon} label={isDarkMode ? '浅色' : '深色'} active={isDarkMode} onClick={toggleThemeMode} />
-            <ControlButton icon={WifiIcon} label="Wi-Fi" active />
+        <div className="p-4 pt-12 max-h-screen overflow-y-auto">
+            <div className="max-w-2xl mx-auto bg-card-glass backdrop-blur-2xl rounded-3xl shadow-2xl p-6 space-y-6">
+                
+                {/* Quick Actions */}
+                <div className="grid grid-cols-4 gap-4">
+                    <ControlButton icon={SparklesIcon} label="获取新洞察" onClick={handleGetInsight} />
+                    <ControlButton icon={ClockIcon} label="历史洞察" onClick={handleShowHistory} />
+                    <ControlButton icon={isDarkMode ? SunIcon : MoonIcon} label={isDarkMode ? '浅色' : '深色'} active={isDarkMode} onClick={toggleThemeMode} />
+                </div>
+                
+                {/* Personalization Section */}
+                <div className="bg-secondary/50 p-4 rounded-xl space-y-4">
+                    <h3 className="font-semibold text-foreground">个性化</h3>
+                     <div>
+                        <label htmlFor="userName" className="block text-sm font-medium text-foreground mb-1">用户名</label>
+                        <Input id="userName" type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="您希望AI如何称呼您？"/>
+                    </div>
+                     <div className="flex items-center justify-between">
+                        <label htmlFor="themeSelector" className="text-sm font-medium text-foreground">主题</label>
+                        <select 
+                            id="themeSelector"
+                            value={settings.themeName}
+                            onChange={(e) => setTheme(e.target.value)}
+                            className="px-3 py-1.5 bg-input/80 border border-border rounded-lg text-sm"
+                        >
+                            {Object.keys(themes).map(key => (
+                                <option key={key} value={key}>{themes[key].light.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
 
-        </div>
+                {/* System & Data Section */}
+                <div className="bg-secondary/50 p-4 rounded-xl space-y-4">
+                    <h3 className="font-semibold text-foreground">系统与数据</h3>
+                     <div>
+                        <label htmlFor="geminiApiKey" className="block text-sm font-medium text-foreground mb-1">Gemini API 密钥</label>
+                        <Input id="geminiApiKey" type="password" value={geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="在此输入您的 API 密钥"/>
+                    </div>
+                    <div className="flex space-x-4">
+                        <Button onClick={handleExport} icon={DownloadIcon} size="sm" variant="secondary">导出状态</Button>
+                        <Button onClick={handleImportClick} icon={UploadIcon} size="sm" variant="secondary">导入状态</Button>
+                        <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".ast,.ast_bubble" className="hidden" />
+                    </div>
+                </div>
 
-        <div>
-            <label className="text-sm font-medium text-foreground">亮度</label>
-            <div className="relative mt-2">
-                <div className="h-2 w-full bg-secondary/80 rounded-full"></div>
-                <div className="h-2 w-3/4 bg-accent rounded-full absolute top-0"></div>
-                <div className="w-5 h-5 bg-card rounded-full shadow-md absolute top-1/2 -translate-y-1/2" style={{left: '75%'}}></div>
+                 <div className="flex justify-center pt-4">
+                    <button onClick={handleClose} className="px-8 py-2 bg-primary text-primary-foreground font-semibold rounded-full shadow-lg">
+                        完成
+                    </button>
+                 </div>
             </div>
         </div>
-
-        <button 
-            onClick={() => setControlCenterOpen(false)} 
-            className="absolute top-3 right-3 p-2 rounded-full text-muted-foreground hover:bg-secondary/80 transition-colors"
-            aria-label="关闭控制中心"
-        >
-            <XIcon className="w-5 h-5" />
-        </button>
       </motion.div>
     </motion.div>
   );

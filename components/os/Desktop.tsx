@@ -1,12 +1,13 @@
-import React, { useRef, useEffect } from 'react';
+
+import React, { useRef, useEffect, useMemo } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate, Reorder } from 'framer-motion';
 import { ChevronDownIcon } from '../../assets/icons';
 
 const Desktop: React.FC = () => {
-    const { osState, setControlCenterOpen } = useOS();
-    const { ui: { isControlCenterOpen } } = osState;
+    const { osState, dispatch, setControlCenterOpen } = useOS();
+    const { ui: { isControlCenterOpen }, activeAssets, desktopAssetOrder, installedAgents } = osState;
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const y = useMotionValue(0);
@@ -14,12 +15,6 @@ const Desktop: React.FC = () => {
     const indicatorOpacity = useTransform(y, [0, 60], [0, 1]);
     const indicatorScale = useTransform(y, [0, 60], [0.8, 1]);
 
-    useEffect(() => {
-        if (!isControlCenterOpen) {
-            animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
-        }
-    }, [isControlCenterOpen, y]);
-    
     // This effect handles the pull-down gesture
     useEffect(() => {
         const scrollContainer = scrollContainerRef.current;
@@ -50,7 +45,8 @@ const Desktop: React.FC = () => {
         };
 
         const handlePointerDown = (event: PointerEvent) => {
-            if (scrollContainer.scrollTop === 0 && event.isPrimary && !isControlCenterOpen) {
+             // Only trigger pull-down if not dragging an agent bubble
+            if (scrollContainer.scrollTop === 0 && event.isPrimary && !isControlCenterOpen && !(event.target as HTMLElement).closest('[data-reorder-handle]')) {
                 isDragging = true;
                 startY = event.clientY;
                 y.set(0);
@@ -70,27 +66,19 @@ const Desktop: React.FC = () => {
         };
     }, [y, setControlCenterOpen, isControlCenterOpen]);
 
-
-    const sortedAssets = Object.values(osState.activeAssets)
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
-    // Group assets to allow small assets to sit side-by-side
-    const groupedAssets = sortedAssets.reduce<any[][]>((acc, asset) => {
-        const agentDef = osState.installedAgents[asset.agentId];
-        if (agentDef && agentDef.size === 'small') {
-            const lastGroup = acc[acc.length - 1];
-            // If the last group is also a small item and has only one item, add to it.
-            if (lastGroup && lastGroup.length === 1 && osState.installedAgents[lastGroup[0].agentId]?.size === 'small') {
-                lastGroup.push(asset);
-            } else {
-                acc.push([asset]); // Start a new group for the small asset
-            }
-        } else {
-            acc.push([asset]); // Full/medium assets get their own group
+    useEffect(() => {
+        if (!isControlCenterOpen) {
+            animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 });
         }
-        return acc;
-    }, []);
+    }, [isControlCenterOpen, y]);
 
+    const orderedAssets = useMemo(() => {
+        return desktopAssetOrder.map(id => activeAssets[id]).filter(Boolean);
+    }, [desktopAssetOrder, activeAssets]);
+
+    const handleReorder = (newOrder: any[]) => {
+        dispatch({ type: 'UPDATE_ASSET_ORDER', payload: newOrder.map(asset => asset.id) });
+    };
 
     return (
         <div className="h-full w-full relative overflow-hidden">
@@ -111,43 +99,37 @@ const Desktop: React.FC = () => {
                     ref={scrollContainerRef}
                     className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6"
                 >
-                    <div className="max-w-2xl mx-auto space-y-4">
-                       {groupedAssets.map((group, groupIndex) => {
-                           if (group.length > 1) {
-                               // Render a row of small assets
-                               return (
-                                   <div key={`group-${groupIndex}`} className="flex flex-col sm:flex-row gap-4">
-                                       {group.map(asset => {
-                                            const agentDef = osState.installedAgents[asset.agentId];
-                                            if (!agentDef) return null;
-                                            return (
-                                                <div key={asset.id} className="h-36 w-full sm:w-1/2">
-                                                    <AgentBubble asset={asset} />
-                                                </div>
-                                            )
-                                       })}
-                                   </div>
-                               )
-                           }
-
-                           // Render a single, larger asset
-                           const asset = group[0];
-                           const agentDef = osState.installedAgents[asset.agentId];
+                    <Reorder.Group
+                        as="div"
+                        axis="y"
+                        values={orderedAssets}
+                        onReorder={handleReorder}
+                        className="max-w-2xl mx-auto grid grid-cols-2 gap-4"
+                    >
+                       {orderedAssets.map(asset => {
+                           const agentDef = installedAgents[asset.agentId];
                            if (!agentDef) return null;
+
                            const sizeClasses = {
-                                small: 'h-36', // Fallback for single small asset
-                                medium: 'h-52',
-                                full: 'h-72',
+                                small: 'col-span-1 h-36',
+                                medium: 'col-span-2 h-52',
+                                full: 'col-span-2 h-72',
                            };
-                           const heightClass = sizeClasses[agentDef.size || 'medium'];
+                           const itemClass = sizeClasses[agentDef.size || 'medium'];
 
                            return (
-                               <div key={asset.id} className={heightClass}>
+                               <Reorder.Item
+                                   key={asset.id}
+                                   value={asset}
+                                   className={itemClass}
+                                   // Custom drag listener to avoid conflict with page swipe
+                                   dragListener={false}
+                               >
                                    <AgentBubble asset={asset} />
-                               </div>
+                               </Reorder.Item>
                            )
                        })}
-                    </div>
+                    </Reorder.Group>
                 </div>
             </motion.div>
         </div>

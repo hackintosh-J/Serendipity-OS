@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OSState, ModalType, AgentDefinition, AIPanelState, AgentComponentProps } from './types';
 import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent } from './components/agents/index';
@@ -164,17 +165,7 @@ const initialWelcomeAssetState = {
 祝您探索愉快！`
 };
 
-export const INITIAL_OS_STATE: OSState = {
-  isInitialized: false,
-  settings: {
-    userName: '探索者',
-    themeName: 'default',
-    themeMode: 'light',
-    geminiApiKey: null,
-    wallpaper: null,
-  },
-  installedAgents: PRE_INSTALLED_AGENTS,
-  activeAssets: {
+const initialAssets = {
     'welcome-asset': {
         id: 'welcome-asset',
         agentId: 'agent.system.memo',
@@ -228,7 +219,20 @@ export const INITIAL_OS_STATE: OSState = {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     }
+};
+
+export const INITIAL_OS_STATE: OSState = {
+  isInitialized: false,
+  settings: {
+    userName: '探索者',
+    themeName: 'default',
+    themeMode: 'light',
+    geminiApiKey: null,
+    wallpaper: null,
   },
+  installedAgents: PRE_INSTALLED_AGENTS,
+  activeAssets: initialAssets,
+  desktopAssetOrder: Object.keys(initialAssets), // Initialize order from assets
   insightHistory: [],
   ui: {
     activeModal: ModalType.NONE,

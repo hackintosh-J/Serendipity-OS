@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { ActiveAssetInstance } from '../types';
 import { useOS } from '../contexts/OSContext';
 import { astService } from '../services/astService';
-import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon } from './icons';
-import { motion } from 'framer-motion';
+import { CloudIcon, DownloadIcon, TrashIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, GripVerticalIcon } from './icons';
+import { motion, useDragControls } from 'framer-motion';
 
 interface AgentBubbleProps {
   asset: ActiveAssetInstance;
@@ -33,6 +34,7 @@ const LiveClockPreview: React.FC = () => {
 const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
   const { osState, viewAsset, dispatch, deleteAsset } = useOS();
   const agentDef = osState.installedAgents[asset.agentId];
+  const dragControls = useDragControls();
 
   const handleExport = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -49,8 +51,8 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
   }
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent click from triggering when an interactive element inside is clicked
-    if ((e.target as HTMLElement).closest('button, input, a')) {
+    // Prevent click from triggering when a drag handle or interactive element inside is clicked
+    if ((e.target as HTMLElement).closest('button, input, a, [data-reorder-handle]')) {
         return;
     }
     viewAsset(asset.id);
@@ -177,7 +179,7 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
   
   const isMinimalPreview = agentDef.size === 'small';
 
-  const containerClasses = 'relative w-full h-full bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 cursor-pointer flex flex-col transition-shadow duration-300 hover:shadow-primary/30';
+  const containerClasses = 'relative w-full h-full bg-card-glass backdrop-blur-xl rounded-2xl shadow-lg p-4 flex flex-col transition-shadow duration-300';
 
   return (
     <motion.div
@@ -186,11 +188,14 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
       initial="hidden"
       animate="visible"
       exit="exit"
+      dragListener={false}
+      dragControls={dragControls}
       transition={{ type: 'spring', duration: 0.5 }}
       className={containerClasses}
       onClick={handleCardClick}
       aria-label={`打开 ${asset.name}`}
       role="button"
+      whileDrag={{ scale: 1.05, boxShadow: '0px 10px 30px rgba(0,0,0,0.2)' }}
     >
       <header data-is-bubble-header="true" className="flex justify-between items-start mb-3 flex-shrink-0">
         <div className="flex items-center space-x-3 min-w-0">
@@ -201,14 +206,15 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
           )}
           <h3 className="font-semibold text-card-foreground truncate">{asset.name}</h3>
         </div>
-        <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
-             <button
-              onClick={handleExport}
-              className="p-2 rounded-full text-muted-foreground hover:bg-secondary hover:text-primary transition-colors"
-              aria-label={`导出 ${asset.name}`}
+        <div className="flex items-center space-x-0.5 flex-shrink-0 ml-2">
+             <div
+              data-reorder-handle
+              onPointerDown={(e) => dragControls.start(e)}
+              className="p-2 cursor-grab active:cursor-grabbing rounded-full text-muted-foreground hover:bg-secondary"
+              aria-label={`拖拽 ${asset.name}`}
             >
-              <DownloadIcon className="w-4 h-4" />
-            </button>
+              <GripVerticalIcon className="w-4 h-4" />
+            </div>
              <button
               onClick={handleDelete}
               className="p-2 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -223,9 +229,6 @@ const AgentBubble: React.FC<AgentBubbleProps> = ({ asset }) => {
         <CardPreview />
       </main>
       
-      <footer className="text-xs text-muted-foreground/80 mt-2 self-end flex-shrink-0 pointer-events-none">
-        更新于: {new Date(asset.updatedAt).toLocaleTimeString()}
-      </footer>
     </motion.div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { geminiService } from '../../services/geminiService';
@@ -186,45 +187,43 @@ const AIPanel: React.FC = () => {
     <AnimatePresence>
       {isPanelVisible && (
         <motion.div
-            className="absolute bottom-0 left-0 right-0 h-[45vh] p-4 pt-0 flex flex-col items-center bg-transparent z-30"
+            className="absolute bottom-0 left-0 right-0 h-[55vh] p-4 flex flex-col items-center bg-card-glass backdrop-blur-2xl shadow-2xl border border-border/50 rounded-t-3xl z-30"
             initial={{ y: '100%' }}
             animate={{ y: '0%' }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 200 }}
         >
             {/* Chat History Panel */}
-            <div className="w-full max-w-2xl flex-grow mb-4 overflow-hidden">
-                <div className="w-full h-full overflow-y-auto p-4 space-y-4 rounded-2xl bg-card-glass backdrop-blur-xl shadow-2xl border border-border/50">
-                    {messages.map((msg) => (
-                        <div key={msg.id} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-                            {msg.sender === 'ai' && <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground flex-shrink-0"><SparklesIcon className="w-5 h-5" /></div>}
-                            <div className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${msg.sender === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground rounded-bl-none shadow-sm'}`}>
-                                {msg.isThinking && (
-                                    <div className="mb-2 border-b border-border pb-2">
-                                        <button onClick={() => setIsThinkingCollapsed(prev => !prev)} className="flex items-center justify-between w-full text-xs text-muted-foreground font-semibold">
-                                            思考中...
-                                            <ChevronDownIcon className={`w-4 h-4 transition-transform ${!isThinkingCollapsed && 'rotate-180'}`} />
-                                        </button>
-                                        <AnimatePresence>
-                                            {!isThinkingCollapsed && (
-                                                <motion.p 
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                    className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap"
-                                                >
-                                                    {msg.thinkingText}
-                                                </motion.p>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                )}
-                                <p className="text-sm break-words whitespace-pre-wrap">{msg.text || (msg.isThinking ? '' : '...')}</p>
-                            </div>
+            <div className="w-full max-w-2xl flex-grow mb-4 overflow-y-auto p-4 space-y-4">
+                {messages.map((msg) => (
+                    <div key={msg.id} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                        {msg.sender === 'ai' && <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground flex-shrink-0"><SparklesIcon className="w-5 h-5" /></div>}
+                        <div className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${msg.sender === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-secondary text-secondary-foreground rounded-bl-none shadow-sm'}`}>
+                            {msg.isThinking && (
+                                <div className="mb-2 border-b border-border/50 pb-2">
+                                    <button onClick={() => setIsThinkingCollapsed(prev => !prev)} className="flex items-center justify-between w-full text-xs text-muted-foreground font-semibold">
+                                        思考中...
+                                        <ChevronDownIcon className={`w-4 h-4 transition-transform ${!isThinkingCollapsed && 'rotate-180'}`} />
+                                    </button>
+                                    <AnimatePresence>
+                                        {!isThinkingCollapsed && (
+                                            <motion.p 
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap"
+                                            >
+                                                {msg.thinkingText}
+                                            </motion.p>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            )}
+                            <p className="text-sm break-words whitespace-pre-wrap">{msg.text || (msg.isThinking ? '' : '...')}</p>
                         </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                </div>
+                    </div>
+                ))}
+                <div ref={messagesEndRef} />
             </div>
 
             {/* The Input Bar that animates from the Dock */}
@@ -236,24 +235,26 @@ const AIPanel: React.FC = () => {
                  <button onClick={() => setAIPanelState('closed')} className="w-14 h-14 mr-2 rounded-2xl bg-secondary/50 text-secondary-foreground hover:bg-secondary/70 transition-colors flex-shrink-0 flex items-center justify-center">
                     <ChevronDownIcon className="w-6 h-6" />
                 </button>
-                <input
-                    ref={inputRef}
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={isLoading ? "AI正在思考..." : "与我交谈或下达指令..."}
-                    className="w-full h-full text-lg bg-transparent text-foreground border-none focus:ring-0 placeholder:text-muted-foreground px-3"
-                    disabled={isLoading}
-                />
-                <button 
-                    onClick={handleSend} 
-                    disabled={input.trim() === '' || isLoading} 
-                    className="w-14 h-14 ml-2 rounded-2xl bg-primary text-primary-foreground disabled:bg-muted transition-colors flex-shrink-0 flex items-center justify-center"
-                    aria-label="发送消息"
-                >
-                    <SendIcon className="w-6 h-6"/>
-                </button>
+                <div className="relative w-full h-full">
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder={isLoading ? "AI正在思考..." : "与我交谈或下达指令..."}
+                        className="w-full h-full text-lg bg-background/50 text-foreground border-none focus:ring-2 focus:ring-primary rounded-2xl placeholder:text-muted-foreground px-4"
+                        disabled={isLoading}
+                    />
+                    <button 
+                        onClick={handleSend} 
+                        disabled={input.trim() === '' || isLoading} 
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary text-primary-foreground disabled:bg-muted transition-colors flex-shrink-0 flex items-center justify-center"
+                        aria-label="发送消息"
+                    >
+                        <SendIcon className="w-5 h-5"/>
+                    </button>
+                </div>
             </motion.div>
         </motion.div>
       )}

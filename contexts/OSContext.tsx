@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import { OSState, OSAction, ActiveAssetInstance, ModalType, AIPanelState } from '../types';
 import { INITIAL_OS_STATE } from '../constants';
@@ -28,6 +29,7 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
       return {
         ...state,
         activeAssets: { ...state.activeAssets, [newAsset.id]: newAsset },
+        desktopAssetOrder: [...state.desktopAssetOrder, newAsset.id],
       };
     }
     
@@ -63,6 +65,8 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
       
       const newActiveAssets = { ...state.activeAssets };
       delete newActiveAssets[assetId];
+
+      const newDesktopAssetOrder = state.desktopAssetOrder.filter(id => id !== assetId);
       
       const newUIState = state.ui.viewingAssetId === assetId 
         ? { ...state.ui, viewingAssetId: null } 
@@ -71,6 +75,7 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
       return { 
         ...state,
         activeAssets: newActiveAssets,
+        desktopAssetOrder: newDesktopAssetOrder,
         ui: newUIState,
       };
     }
@@ -126,12 +131,15 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
 
       const newActiveAssets = { ...state.activeAssets };
       delete newActiveAssets[assetId];
+      
+      const newDesktopAssetOrder = state.desktopAssetOrder.filter(id => id !== assetId);
 
       const newInsightHistory = [...state.insightHistory, asset];
       
       return {
         ...state,
         activeAssets: newActiveAssets,
+        desktopAssetOrder: newDesktopAssetOrder,
         insightHistory: newInsightHistory,
       };
     }
@@ -152,7 +160,15 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
         return {
             ...state,
             activeAssets: { ...state.activeAssets, [assetId]: asset },
+            desktopAssetOrder: [...state.desktopAssetOrder, assetId],
             insightHistory: state.insightHistory.filter(a => a.id !== assetId),
+        };
+    }
+    
+    case 'UPDATE_ASSET_ORDER': {
+        return {
+            ...state,
+            desktopAssetOrder: action.payload
         };
     }
 
@@ -163,6 +179,10 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
         const newActiveAssets = { ...state.activeAssets, ...importedState.activeAssets };
         const newSettings = { ...state.settings, ...importedState.settings };
         const newInsightHistory = [...state.insightHistory, ...(importedState.insightHistory || [])];
+        
+        const existingOrder = new Set(state.desktopAssetOrder);
+        const newAssetIds = Object.keys(importedState.activeAssets || {}).filter(id => !existingOrder.has(id));
+        const newDesktopAssetOrder = [...state.desktopAssetOrder, ...newAssetIds];
         
         // Re-hydrate imported agent definitions to ensure they have their functions.
         const newInstalledAgents = { ...state.installedAgents };
@@ -184,6 +204,7 @@ const osReducer = (state: OSState, action: OSAction): OSState => {
             settings: newSettings,
             installedAgents: newInstalledAgents,
             activeAssets: newActiveAssets,
+            desktopAssetOrder: newDesktopAssetOrder,
             insightHistory: newInsightHistory,
         };
     }
@@ -225,10 +246,19 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       if (savedStateJSON) {
         const savedState = JSON.parse(savedStateJSON);
         
+        let assetOrder = savedState.desktopAssetOrder;
+        // Backwards compatibility: if asset order doesn't exist, create it.
+        if (!assetOrder || !Array.isArray(assetOrder)) {
+          assetOrder = Object.keys(savedState.activeAssets || {}).sort((a,b) => 
+            new Date(savedState.activeAssets[a].createdAt).getTime() - new Date(savedState.activeAssets[b].createdAt).getTime()
+          );
+        }
+
         const rehydratedState: OSState = {
           ...INITIAL_OS_STATE,
           settings: { ...INITIAL_OS_STATE.settings, ...(savedState.settings || {}) },
           activeAssets: savedState.activeAssets || {},
+          desktopAssetOrder: assetOrder,
           insightHistory: savedState.insightHistory || [],
           installedAgents: INITIAL_OS_STATE.installedAgents,
           ui: { ...INITIAL_OS_STATE.ui }, // UI state is never persisted
@@ -250,6 +280,7 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         const stateToSave = {
           settings: osState.settings,
           activeAssets: osState.activeAssets,
+          desktopAssetOrder: osState.desktopAssetOrder,
           insightHistory: osState.insightHistory,
         };
         localStorage.setItem(OS_STATE_LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));

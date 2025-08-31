@@ -64,7 +64,7 @@ const MainViewport: React.FC = () => {
   return (
     <motion.div
       className="flex-grow relative overflow-hidden"
-      animate={{ paddingBottom: isAiPanelOpen ? '45vh' : '6rem' }}
+      animate={{ paddingBottom: isAiPanelOpen ? '55vh' : '6rem' }}
       transition={{ type: 'spring', damping: 30, stiffness: 200 }}
     >
       <div className="absolute inset-0 bg-transparent">

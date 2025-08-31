@@ -4,6 +4,7 @@ import { OSState, OSAction, ActiveAssetInstance, ModalType, AIPanelState } from 
 import { INITIAL_OS_STATE } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { themes, applyTheme } from '../styles/themes';
+import { storageService } from '../services/storageService';
 
 const OS_STATE_LOCAL_STORAGE_KEY = 'serendipity_os_state';
 
@@ -349,9 +350,15 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             try {
                 const insight = await geminiService.generateInsight(osState, osState.settings.geminiApiKey!);
                 if (insight && insight.type !== 'error') {
-                    let generated_image = null;
+                    let generated_image_storageKey = null;
                     if (insight.image_prompt) {
-                        generated_image = await geminiService.generateImage(insight.image_prompt, osState.settings.geminiApiKey!);
+                        const generated_image_base64 = await geminiService.generateImage(insight.image_prompt, osState.settings.geminiApiKey!);
+                        if (generated_image_base64) {
+                            const storageKey = `media-insight-${pendingAsset.id}`;
+                            const dataUrl = `data:image/jpeg;base64,${generated_image_base64}`;
+                            await storageService.setItem(storageKey, dataUrl);
+                            generated_image_storageKey = storageKey;
+                        }
                     }
                     dispatch({ 
                         type: 'UPDATE_ASSET_METADATA', 
@@ -364,7 +371,7 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                         type: 'UPDATE_ASSET_STATE',
                         payload: {
                             assetId: pendingAsset.id,
-                            newState: { ...insight, generated_image, generationStatus: 'complete' }
+                            newState: { ...insight, generated_image_storageKey, generationStatus: 'complete' }
                         }
                     });
                 } else {

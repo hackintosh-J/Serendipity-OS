@@ -5,17 +5,33 @@ import { OSState, ModalType, AgentDefinition, AIPanelState, AgentComponentProps 
 import { MemoAgent, BrowserAgent, WeatherAgent, HelpAgent, ClockAgent, CalculatorAgent, CalendarAgent, TodoAgent, MediaPlayerAgent, CameraAgent, PhotosAgent } from './components/agents/index';
 import { MemoIcon, BrowserIcon, CloudIcon, HelpCircleIcon, ClockIcon, CalculatorIcon, CalendarIcon, CheckSquareIcon, StarIcon, SparklesIcon, DownloadIcon, PlayIcon, CameraIcon, ImageIcon } from './assets/icons';
 import Button from './components/shared/Button';
+import { storageService } from './services/storageService';
 
 // --- AI Insight Agent Component ---
 // Defined here to avoid creating new files, respecting the project constraints.
 const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, updateState, close, dispatch }) => {
     const { state } = instance;
-    const { content, generated_image } = state;
+    const { content, generated_image_storageKey, wallpaper_feedback } = state;
+
+    const [imageUrl, setImageUrl] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        let isMounted = true;
+        setImageUrl(null); // Reset on key change
+        if (generated_image_storageKey) {
+            storageService.getItem<string>(generated_image_storageKey).then(url => {
+                if (isMounted && url) {
+                    setImageUrl(url);
+                }
+            });
+        }
+        return () => { isMounted = false; };
+    }, [generated_image_storageKey]);
+
 
     const handleSetWallpaper = () => {
-        if(generated_image) {
-            const wallpaperUrl = `data:image/jpeg;base64,${generated_image}`;
-            dispatch({ type: 'UPDATE_SETTINGS', payload: { wallpaper: wallpaperUrl } });
+        if(imageUrl) {
+            dispatch({ type: 'UPDATE_SETTINGS', payload: { wallpaper: imageUrl } });
             updateState({ ...state, wallpaper_feedback: '壁纸已设置！' });
         }
     };
@@ -25,18 +41,17 @@ const InsightAgentComponent: React.FC<AgentComponentProps> = ({ instance, update
         close();
     };
 
-    // FIX: Replaced JSX with React.createElement to compile in a .ts file.
     return React.createElement('div', { className: "p-4 bg-transparent rounded-lg -m-4 text-card-foreground" },
         React.createElement('h2', { className: "text-xl font-bold mb-4" }, instance.name),
         React.createElement('p', { className: "leading-relaxed mb-6 whitespace-pre-wrap" }, content),
-        generated_image && React.createElement('div', { className: "space-y-4" },
-            React.createElement('img', { src: `data:image/jpeg;base64,${generated_image}`, alt: "AI-generated content", className: "w-full rounded-lg shadow-md" }),
+        imageUrl && React.createElement('div', { className: "space-y-4" },
+            React.createElement('img', { src: imageUrl, alt: "AI-generated content", className: "w-full rounded-lg shadow-md" }),
             React.createElement('div', { className: 'flex space-x-4' },
                 React.createElement(Button, { onClick: handleSetWallpaper, children: "设置为壁纸" }),
                 React.createElement(Button, { onClick: handleArchive, variant: 'secondary', icon: DownloadIcon, children: "存档" })
             )
         ),
-        state.wallpaper_feedback && React.createElement('p', { className: "text-sm text-primary mt-4 font-semibold" }, state.wallpaper_feedback)
+        wallpaper_feedback && React.createElement('p', { className: "text-sm text-primary mt-4 font-semibold" }, wallpaper_feedback)
     );
 };
 
@@ -158,7 +173,7 @@ const insightAgent: AgentDefinition = {
     description: '由AI主动生成的惊喜和建议。',
     icon: StarIcon,
     component: InsightAgentComponent,
-    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, generated_image: null, generationStatus: 'complete' },
+    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, generated_image_storageKey: null, generationStatus: 'complete' },
     size: 'medium',
 };
 

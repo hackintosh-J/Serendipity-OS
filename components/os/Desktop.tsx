@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
@@ -13,7 +14,10 @@ const Desktop: React.FC = () => {
     }, [desktopAssetOrder, activeAssets]);
 
     return (
-        <div className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6">
+        <div 
+            className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6"
+            style={{ touchAction: 'pan-y' }}
+        >
             <motion.div
                 layout
                 transition={{ type: 'spring', damping: 25, stiffness: 120 }}

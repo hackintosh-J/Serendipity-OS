@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { motion } from 'framer-motion';
@@ -12,7 +13,10 @@ const GlanceView: React.FC = () => {
   }, [desktopAssetOrder, activeAssets]);
 
   return (
-    <div className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6">
+    <div 
+      className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6"
+      style={{ touchAction: 'pan-y' }}
+    >
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold text-foreground mb-6">速览</h1>
         <motion.div layout className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">

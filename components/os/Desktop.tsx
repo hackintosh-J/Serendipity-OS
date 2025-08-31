@@ -5,6 +5,7 @@ import { useOS } from '../../contexts/OSContext';
 import AgentBubble from '../../assets/AgentBubble';
 import { motion, useMotionValue, useTransform, animate, Reorder } from 'framer-motion';
 import { ChevronDownIcon } from '../../assets/icons';
+import { ActiveAssetInstance } from '../../types';
 
 const Desktop: React.FC = () => {
     const { osState, dispatch, setControlCenterOpen } = useOS();
@@ -77,8 +78,43 @@ const Desktop: React.FC = () => {
         return desktopAssetOrder.map(id => activeAssets[id]).filter(Boolean);
     }, [desktopAssetOrder, activeAssets]);
 
-    const handleReorder = (newOrder: any[]) => {
-        dispatch({ type: 'UPDATE_ASSET_ORDER', payload: newOrder.map(asset => asset.id) });
+    const handleReorder = (newOrderAssets: ActiveAssetInstance[]) => {
+        const cleanedOrderIds: string[] = [];
+        let unprocessedAssets = [...newOrderAssets];
+
+        while (unprocessedAssets.length > 0) {
+            const currentAsset = unprocessedAssets.shift(); // Takes the first one
+            if (!currentAsset) continue;
+
+            cleanedOrderIds.push(currentAsset.id);
+            
+            const agentDef = installedAgents[currentAsset.agentId];
+            const currentIsSmall = agentDef?.size === 'small';
+
+            if (currentIsSmall) {
+                // It's a small item. To maintain the grid, we should try to pair it
+                // with another small item if one exists.
+                let partnerIndex = -1;
+                // Find the next available small item in the unprocessed list.
+                for (let i = 0; i < unprocessedAssets.length; i++) {
+                    const partnerAsset = unprocessedAssets[i];
+                    const partnerAgentDef = installedAgents[partnerAsset.agentId];
+                    if (partnerAgentDef?.size === 'small') {
+                        partnerIndex = i;
+                        break;
+                    }
+                }
+
+                if (partnerIndex !== -1) {
+                    // A partner was found. Move it from its current position
+                    // to be right after the current small item.
+                    const [partnerAsset] = unprocessedAssets.splice(partnerIndex, 1);
+                    cleanedOrderIds.push(partnerAsset.id);
+                }
+            }
+        }
+        
+        dispatch({ type: 'UPDATE_ASSET_ORDER', payload: cleanedOrderIds });
     };
 
     return (
@@ -102,7 +138,6 @@ const Desktop: React.FC = () => {
                 >
                     <Reorder.Group
                         as="div"
-                        axis="y"
                         values={orderedAssets}
                         onReorder={handleReorder}
                         className="max-w-2xl mx-auto grid grid-cols-2 gap-4"

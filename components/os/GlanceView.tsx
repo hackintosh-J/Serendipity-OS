@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { useOS } from '../../contexts/OSContext';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { ChevronDownIcon } from '../../assets/icons';
@@ -6,7 +6,7 @@ import { ChevronDownIcon } from '../../assets/icons';
 const GlanceView: React.FC = () => {
   const { osState, viewAsset, setControlCenterOpen } = useOS();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { ui: { isControlCenterOpen } } = osState;
+  const { ui: { isControlCenterOpen }, desktopAssetOrder, activeAssets } = osState;
 
   const y = useMotionValue(0);
   const pullDownY = useTransform(y, v => v < 0 ? 0 : Math.pow(v, 0.85)); // Add resistance
@@ -70,8 +70,9 @@ const GlanceView: React.FC = () => {
   }, [y, setControlCenterOpen, isControlCenterOpen]);
 
 
-  const sortedAssets = Object.values(osState.activeAssets)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const orderedAssets = useMemo(() => {
+    return desktopAssetOrder.map(id => activeAssets[id]).filter(Boolean);
+  }, [desktopAssetOrder, activeAssets]);
 
   return (
     <div className="h-full w-full relative overflow-hidden">
@@ -95,7 +96,7 @@ const GlanceView: React.FC = () => {
               <div className="max-w-3xl mx-auto">
                   <h1 className="text-2xl font-bold text-foreground mb-6">速览</h1>
                   <motion.div layout className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">
-                  {sortedAssets.map(asset => {
+                  {orderedAssets.map(asset => {
                       const agentDef = osState.installedAgents[asset.agentId];
                       if (!agentDef) return null;
 

@@ -1,7 +1,8 @@
 
+
 import React from 'react';
 import { useOS } from '../../contexts/OSContext';
-import { SparklesIcon, PlusIcon, GridIcon } from '../../assets/icons';
+import { SparklesIcon, PlusIcon, GridIcon, SettingsIcon } from '../../assets/icons';
 import { ModalType } from '../../types';
 import AgentLibrary from './AgentLibrary';
 import CreateAssetPrompt from './CreateAssetPrompt';
@@ -22,7 +23,7 @@ const DockButton: React.FC<{ onClick: () => void; children: React.ReactNode; 'ar
 );
 
 const Dock: React.FC = () => {
-  const { osState, setActiveModal, setAIPanelState, setCurrentView } = useOS();
+  const { osState, setActiveModal, setAIPanelState, setCurrentView, setControlCenterOpen } = useOS();
 
   const handleAIToggle = () => {
     setAIPanelState(osState.ui.aiPanelState === 'panel' ? 'closed' : 'panel');
@@ -57,6 +58,9 @@ const Dock: React.FC = () => {
                   </DockButton>
                   <DockButton onClick={handleViewToggle} aria-label="切换视图">
                       <GridIcon className="w-7 h-7" />
+                  </DockButton>
+                  <DockButton onClick={() => setControlCenterOpen(true)} aria-label="打开控制中心">
+                      <SettingsIcon className="w-7 h-7" />
                   </DockButton>
                 </div>
               </motion.div>

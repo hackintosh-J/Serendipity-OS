@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI } from "@google/genai";
 
 const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作系统的核心AI助手。
@@ -46,6 +47,8 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
     - 'question': (可选) 用户的具体问题。如果省略, 将使用用户的原始提示。
 6.  'UPDATE_ASSET_ORDER': 重新整理桌面布局。
     - 'order': (必需) 包含所有资产ID的数组，按新的期望顺序排列。
+7.  'GENERATE_INSIGHT': 当用户明确要求一个新的“洞察”、“灵感”或“惊喜”时，触发此操作。这会启动一个后台进程来生成内容。不要使用 'CREATE_ASSET' 来创建洞察。
+    - payload: {} (空对象)
 
 特殊指令 - 天气:
 当用户询问天气时，你必须使用你的知识来提供真实的实时天气数据。
@@ -71,7 +74,7 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
 - 'agent.system.calculator': 计算器 (管理自己的状态)
 - 'agent.system.calendar': 日历 (state: { events: { 'YYYY-MM-DD': [{ time: string, text: string }] } })
 - 'agent.system.todo': 待办清单 (state: { todos: [{ id: string, text: string, completed: boolean, date?: 'YYYY-MM-DD' }] })
-- 'agent.system.insight': AI洞察 (由系统自动生成)
+- 'agent.system.insight': AI洞察 (由系统自动生成，或者通过 'GENERATE_INSIGHT' 动作由用户触发。不要直接使用 'CREATE_ASSET' 来创建此类型的资产。)
 
 当前系统上下文如下:
 - 日期: {CURRENT_DATE}
@@ -157,14 +160,36 @@ class GeminiService {
   public async generateInsight(osState: any, apiKey: string): Promise<any> {
     const ai = new GoogleGenAI({ apiKey });
 
-    // FIX: Filter out all insight assets from the context sent to the AI.
-    // This prevents the AI from getting confused by seeing its own pending generation
-    // task or creating feedback loops from previous insights.
     const relevantAssets = Object.values(osState.activeAssets).filter((asset: any) => asset.agentId !== 'agent.system.insight');
+    
+    const summarizedAssets = relevantAssets.map((a: any) => {
+        const summary: any = { name: a.name, agentId: a.agentId };
+        
+        // Optimize prompt size by sending summaries instead of full state
+        if (a.agentId === 'agent.system.memo' && a.state.content) {
+            summary.content_summary = a.state.content.substring(0, 500) + (a.state.content.length > 500 ? '...' : '');
+        } else if (a.agentId === 'agent.system.todo' && a.state.todos && a.state.todos.length > 0) {
+            summary.todos_summary = a.state.todos.slice(0, 5).map((t: any) => t.text);
+        } else if (a.agentId === 'agent.system.calendar' && a.state.events) {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const upcomingEvents = Object.entries(a.state.events)
+                .filter(([dateStr, _]) => new Date(dateStr) >= today)
+                .slice(0, 3)
+                .map(([dateStr, eventsForDay]: [string, any[]]) => ({
+                    date: dateStr,
+                    events: eventsForDay.map(e => e.text).slice(0, 2)
+                }));
+            if (upcomingEvents.length > 0) {
+                summary.calendar_summary = upcomingEvents;
+            }
+        }
+        return summary;
+    });
 
     const finalSystemInstruction = insightSystemInstruction.replace(
         '{ACTIVE_ASSETS_JSON}',
-        JSON.stringify(relevantAssets.map((a: any) => ({ name: a.name, agentId: a.agentId, state: a.state })), null, 2)
+        JSON.stringify(summarizedAssets, null, 2)
     );
     try {
         const response = await ai.models.generateContent({
@@ -265,7 +290,6 @@ class GeminiService {
 
             // Extract thinking content
             const thinkStart = fullText.indexOf('<thinking>');
-            // FIX: Corrected typo from `full` to `fullText`.
             const thinkEnd = fullText.indexOf('</thinking>');
 
             if (thinkStart !== -1) {

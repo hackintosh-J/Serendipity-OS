@@ -14,7 +14,9 @@ const AgentLibrary: React.FC = () => {
   return (
     <Modal title="创建新资产" icon={PlusIcon} onClose={() => setActiveModal(ModalType.NONE)}>
       <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {Object.values(osState.installedAgents).map(agent => (
+        {Object.values(osState.installedAgents)
+          .filter(agent => agent.id !== 'agent.system.insight')
+          .map(agent => (
           <div 
             key={agent.id}
             onClick={() => handleCreate(agent.id, agent.name)}

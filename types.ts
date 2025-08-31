@@ -52,6 +52,9 @@ export interface UIState {
     assetCreationData: { agentId: string; agentName: string; } | null;
     isControlCenterOpen: boolean;
     currentView: 'desktop' | 'glance';
+    isAIBusy: boolean;
+    insightGenerationStatus: 'idle' | 'generating' | 'error';
+    insightGenerationMessage: string | null;
 }
 
 // The entire state of the operating system
@@ -85,8 +88,9 @@ export type OSAction =
   | { type: 'ARCHIVE_INSIGHT'; payload: { assetId: string } }
   | { type: 'DELETE_ARCHIVED_INSIGHT'; payload: { assetId: string } }
   | { type: 'RESTORE_ARCHIVED_INSIGHT'; payload: { assetId: string } }
-  | { type: 'UPDATE_ASSET_ORDER'; payload: string[] }; // <-- New action type
-
+  | { type: 'UPDATE_ASSET_ORDER'; payload: string[] }
+  | { type: 'SET_AI_BUSY'; payload: boolean }
+  | { type: 'SET_INSIGHT_STATUS'; payload: { status: 'idle' | 'generating' | 'error'; message: string | null } };
 // Props for Agent components
 export interface AgentComponentProps {
     instance: ActiveAssetInstance;

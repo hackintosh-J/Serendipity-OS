@@ -189,7 +189,7 @@ const insightAgent: AgentDefinition = {
     description: '由AI主动生成的惊喜和建议。',
     icon: StarIcon,
     component: InsightAgentComponent,
-    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, generated_image_storageKey: null, generationStatus: 'complete' },
+    defaultState: { content: 'AI正在为您准备惊喜...', type: null, image_prompt: null, generated_image_storageKey: null },
     size: 'medium',
     windowScroll: true,
 };
@@ -310,5 +310,8 @@ export const INITIAL_OS_STATE: OSState = {
     assetCreationData: null,
     isControlCenterOpen: false,
     currentView: 'desktop',
+    isAIBusy: false,
+    insightGenerationStatus: 'idle',
+    insightGenerationMessage: null,
   },
 };

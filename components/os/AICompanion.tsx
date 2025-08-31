@@ -15,11 +15,10 @@ interface Message {
 }
 
 const AIPanel: React.FC = () => {
-  const { osState, dispatch, setAIPanelState, createAsset, deleteAsset } = useOS();
+  const { osState, dispatch, setAIPanelState, createAsset, deleteAsset, triggerInsightGeneration } = useOS();
   const { ui, settings } = osState;
-  const { aiPanelState } = ui;
+  const { aiPanelState, isAIBusy } = ui;
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isThinkingCollapsed, setIsThinkingCollapsed] = useState(true);
   const [input, setInput] = useState('');
   
@@ -35,8 +34,6 @@ const AIPanel: React.FC = () => {
   }, [messages, scrollToBottom]);
 
   const processAIResponse = useCallback(async (prompt: string) => {
-    setIsLoading(true);
-    setInput('');
     const userMessage: Message = { id: `msg-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`, sender: 'user', text: prompt };
     setMessages(prev => [...prev, userMessage]);
 
@@ -45,7 +42,6 @@ const AIPanel: React.FC = () => {
     if (!geminiService.isConfigured(apiKey)) {
       const aiMessage: Message = { id: `msg-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`, sender: 'ai', text: 'AI服务当前不可用。请前往“设置”并提供您的 Gemini API 密钥。' };
       setMessages(prev => [...prev, aiMessage]);
-      setIsLoading(false);
       return;
     }
     
@@ -75,9 +71,18 @@ const AIPanel: React.FC = () => {
           for (const actionItem of actions) {
             const { action, payload } = actionItem;
             switch (action) {
+              case 'GENERATE_INSIGHT':
+                  triggerInsightGeneration();
+                  responseTexts.push(`好的，我正在为您准备一个新的洞察...完成后它会出现在您的桌面上。`);
+                  break;
               case 'CREATE_ASSET':
-                  createAsset(payload.agentId, payload.name, payload.initialState);
-                  responseTexts.push(`好的，我已经为您创建了“${payload.name}”。`);
+                  if (payload.agentId === 'agent.system.insight') {
+                      triggerInsightGeneration();
+                      responseTexts.push(`好的，我正在为您准备一个新的洞察...完成后它会出现在您的桌面上。`);
+                  } else {
+                      createAsset(payload.agentId, payload.name, payload.initialState);
+                      responseTexts.push(`好的，我已经为您创建了“${payload.name}”。`);
+                  }
                   break;
               case 'FIND_AND_UPDATE_ASSET': {
                   const assetToUpdate = Object.values(osState.activeAssets).find(a => 
@@ -163,11 +168,7 @@ const AIPanel: React.FC = () => {
             await new Promise(resolve => setTimeout(resolve, 30));
         }
     }
-
-
-    setIsLoading(false);
-    inputRef.current?.focus();
-  }, [osState, createAsset, deleteAsset, dispatch, settings.geminiApiKey]);
+  }, [osState, createAsset, deleteAsset, dispatch, settings.geminiApiKey, triggerInsightGeneration]);
 
   useEffect(() => {
     if (aiPanelState === 'panel') {
@@ -175,16 +176,28 @@ const AIPanel: React.FC = () => {
         setMessages([{ id: `msg-${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`, sender: 'ai', text: `你好，${settings.userName}！有什么可以帮您？` }]);
       }
       setTimeout(() => inputRef.current?.focus(), 150);
-    } else if (aiPanelState === 'closed') {
-      // Reset state when panel is closed but don't clear messages immediately
-      // to allow for exit animation.
     }
   }, [aiPanelState, settings.userName, messages.length]);
 
 
-  const handleSend = () => {
-    if (input.trim() === '' || isLoading) return;
-    processAIResponse(input);
+  const handleSend = async () => {
+    const trimmedInput = input.trim();
+    if (trimmedInput === '' || isAIBusy) {
+        if (isAIBusy) {
+            const busyMessage: Message = { id: `msg-${Date.now()}`, sender: 'ai', text: 'AI正在处理其他任务，请稍后重试。' };
+            setMessages(prev => [...prev, busyMessage]);
+        }
+        return;
+    };
+    setInput('');
+    
+    dispatch({ type: 'SET_AI_BUSY', payload: true });
+    try {
+        await processAIResponse(trimmedInput);
+    } finally {
+        dispatch({ type: 'SET_AI_BUSY', payload: false });
+        inputRef.current?.focus();
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -255,13 +268,13 @@ const AIPanel: React.FC = () => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        placeholder={isLoading ? "AI正在思考..." : "与我交谈或下达指令..."}
+                        placeholder={isAIBusy ? "AI正在思考..." : "与我交谈或下达指令..."}
                         className="w-full h-full text-lg bg-background/50 text-foreground border-none focus:ring-2 focus:ring-primary rounded-2xl placeholder:text-muted-foreground px-4"
-                        disabled={isLoading}
+                        disabled={isAIBusy}
                     />
                     <button 
                         onClick={handleSend} 
-                        disabled={input.trim() === '' || isLoading} 
+                        disabled={input.trim() === '' || isAIBusy} 
                         className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary text-primary-foreground disabled:bg-muted transition-colors flex-shrink-0 flex items-center justify-center"
                         aria-label="发送消息"
                     >

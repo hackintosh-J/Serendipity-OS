@@ -328,6 +328,58 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     });
   }, [osState, dispatch]);
 
+  const autoOrganizeDesktop = useCallback(async () => {
+    if (!osState.isInitialized) return;
+    console.log("Attempting to auto-organize desktop...");
+
+    const { settings } = osState;
+    if (!geminiService.isConfigured(settings.geminiApiKey)) {
+      console.log("Auto-organize skipped: Gemini API key not configured.");
+      return;
+    }
+
+    try {
+      const stream = geminiService.generateActionStream("请根据资产尺寸和类型，智能地整理我的桌面布局。", osState, settings.geminiApiKey);
+
+      for await (const event of stream) {
+        if (event.type === 'result') {
+          let actions = [];
+          if (event.content.actions) {
+            actions = event.content.actions;
+          } else if (event.content.action) {
+            actions = [event.content];
+          }
+
+          for (const actionItem of actions) {
+            const { action, payload } = actionItem;
+            if (action === 'UPDATE_ASSET_ORDER') {
+              if (payload.order && Array.isArray(payload.order)) {
+                const currentIds = new Set(Object.keys(osState.activeAssets));
+                const newIds = new Set(payload.order);
+                if (currentIds.size === newIds.size && [...currentIds].every(id => newIds.has(id as string))) {
+                  if (JSON.stringify(osState.desktopAssetOrder) !== JSON.stringify(payload.order)) {
+                    console.log("Auto-organizing desktop with new order:", payload.order);
+                    dispatch({ type: 'UPDATE_ASSET_ORDER', payload: payload.order });
+                  } else {
+                    console.log("Auto-organize: New order is same as current, no changes made.");
+                  }
+                } else {
+                  console.warn("Auto-organize: AI returned an invalid asset order.", { current: [...currentIds], returned: payload.order });
+                }
+              }
+              return; // We only care about this one action.
+            }
+          }
+        } else if (event.type === 'error') {
+          console.error("Auto-organize failed with AI error:", event.content);
+          return;
+        }
+      }
+    } catch (error) {
+        console.error("Auto-organize failed with system error:", error);
+    }
+  }, [osState, dispatch]);
+
   // Effect to handle the lifecycle of AI insight generation
   useEffect(() => {
     if (!osState.isInitialized) return;
@@ -396,6 +448,18 @@ export const OSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         }
     }
   }, [osState.isInitialized, osState.insightHistory.length, osState.activeAssets, triggerInsightGeneration]);
+
+  // New useEffect to run the auto-organization on startup
+  useEffect(() => {
+    let timeoutId: number;
+    if (osState.isInitialized) {
+        // Run after a short delay to ensure UI is responsive first
+        timeoutId = window.setTimeout(() => {
+            autoOrganizeDesktop();
+        }, 1000); // 1 second delay
+    }
+    return () => window.clearTimeout(timeoutId);
+  }, [osState.isInitialized, autoOrganizeDesktop]);
 
 
   const createAsset = useCallback((agentId: string, name: string, initialState?: any, position?: { x: number, y: number }) => {

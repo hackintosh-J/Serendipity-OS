@@ -141,7 +141,7 @@ const ControlCenter: React.FC = () => {
                     <div className="flex space-x-4">
                         <Button onClick={handleExport} icon={DownloadIcon} size="sm" variant="secondary">导出状态</Button>
                         <Button onClick={handleImportClick} icon={UploadIcon} size="sm" variant="secondary">导入状态</Button>
-                        <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".ast,.ast_bubble" className="hidden" />
+                        <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".ast,.astb" className="hidden" />
                     </div>
                 </div>
 

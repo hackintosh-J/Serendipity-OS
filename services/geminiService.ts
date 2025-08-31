@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 
 const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作系统的核心AI助手。
@@ -72,8 +73,11 @@ const systemInstruction = `你是一个名为 Serendipity OS 的AI原生操作�
 - 'agent.system.todo': 待办清单 (state: { todos: [{ id: string, text: string, completed: boolean, date?: 'YYYY-MM-DD' }] })
 - 'agent.system.insight': AI洞察 (由系统自动生成)
 
-用户的当前桌面布局及资产信息如下:
-{ACTIVE_ASSETS_JSON}
+当前系统上下文如下:
+- 日期: {CURRENT_DATE}
+- 时间: {CURRENT_TIME}
+- 推断地点: {INFERRED_LOCATION}
+- 用户的桌面布局及资产: {ACTIVE_ASSETS_JSON}
 
 例子 1:
 用户: "把天气和时钟放在最上面，然后是我的日历"
@@ -210,6 +214,16 @@ class GeminiService {
 
     const ai = new GoogleGenAI({ apiKey });
 
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+    const currentTime = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    
+    let inferredLocation = '未知';
+    const weatherAssets = Object.values(osState.activeAssets).filter((a: any) => a.agentId === 'agent.system.weather');
+    if (weatherAssets.length > 0) {
+        inferredLocation = (weatherAssets[0] as any).state.location || '未知';
+    }
+
     const assetDetails = osState.desktopAssetOrder.map((assetId: string) => {
         const asset = osState.activeAssets[assetId];
         const agent = osState.installedAgents[asset.agentId];
@@ -223,10 +237,14 @@ class GeminiService {
 
     const contextForAI = JSON.stringify(assetDetails, null, 2);
 
-    const finalSystemInstruction = systemInstruction.replace(
-        '{ACTIVE_ASSETS_JSON}',
-        contextForAI
-    );
+    const finalSystemInstruction = systemInstruction
+        .replace('{CURRENT_DATE}', currentDate)
+        .replace('{CURRENT_TIME}', currentTime)
+        .replace('{INFERRED_LOCATION}', inferredLocation)
+        .replace(
+            '{ACTIVE_ASSETS_JSON}',
+            contextForAI
+        );
 
     try {
         const responseStream = await ai.models.generateContentStream({

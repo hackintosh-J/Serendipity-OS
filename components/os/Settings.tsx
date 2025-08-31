@@ -116,7 +116,7 @@ const Settings: React.FC = () => {
             <div className="flex space-x-4">
                 <Button onClick={handleExport} icon={DownloadIcon}>导出系统状态</Button>
                 <Button onClick={handleImportClick} icon={UploadIcon} variant="secondary">导入系统状态</Button>
-                <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".ast,.ast_bubble" className="hidden" />
+                <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".ast,.astb" className="hidden" />
             </div>
         </div>
       </div>

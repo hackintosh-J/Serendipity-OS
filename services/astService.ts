@@ -97,7 +97,7 @@ class ASTService {
   }
 
   /**
-   * Exports a single asset to an .ast_bubble file.
+   * Exports a single asset to an .astb file.
    */
   public async exportAsset(asset: ActiveAssetInstance, agentDefinition: any) {
      try {
@@ -118,7 +118,7 @@ class ASTService {
       a.href = url;
       // Sanitize the asset name to create a valid filename
       const safeAssetName = asset.name.replace(/[^\p{L}\p{N}\s-]/gu, '_').replace(/\s+/g, '-');
-      a.download = `${safeAssetName}.ast_bubble`;
+      a.download = `${safeAssetName}.astb`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -130,7 +130,7 @@ class ASTService {
   }
 
   /**
-   * Imports system state from an .ast or .ast_bubble file.
+   * Imports system state from an .ast or .astb file.
    */
   public importStateFromFile(file: File): Promise<Partial<OSState>> {
     return new Promise((resolve, reject) => {
@@ -160,7 +160,7 @@ class ASTService {
               resolve(dehydratedState);
             }
             else {
-              reject(new Error("无效的 .ast 或 .ast_bubble 文件格式。"));
+              reject(new Error("无效的 .ast 或 .astb 文件格式。"));
             }
           } else {
             reject(new Error("无法读取文件内容。"));

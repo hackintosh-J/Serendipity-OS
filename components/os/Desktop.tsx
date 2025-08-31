@@ -16,7 +16,7 @@ const Desktop: React.FC = () => {
     return (
         <div 
             className="h-full w-full overflow-y-auto overscroll-behavior-y-contain p-4 sm:p-6"
-            style={{ touchAction: 'pan-y' }}
+            style={{ touchAction: 'pan-y', willChange: 'transform' }}
         >
             <motion.div
                 layout
